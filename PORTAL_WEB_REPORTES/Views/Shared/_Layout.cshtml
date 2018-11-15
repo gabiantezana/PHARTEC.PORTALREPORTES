@@ -1,0 +1,489 @@
+﻿@{
+    Model.Usuario usuario = (Model.Usuario)Session[Casuarinas.Helpers.Constantes.SESSION_USUARIO];
+    Model.Configuracion config = (Model.Configuracion)Session[Casuarinas.Helpers.Constantes.CONFIGURACION];
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>@ViewBag.Title | @config.nombre_empresa</title>
+    <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
+    <meta name="description" content="Developed By MSS Seidor">
+    <meta name="keywords" content="Admin, Bootstrap 3, Template, Theme, Responsive">
+    <link rel="icon" href="~/Assets/img/favicon.ico"/>
+
+    <script src="~/Assets/js/jquery.mousewheel.js"></script>
+
+    <!-- bootstrap 3.0.2 -->
+    <link href="~/Assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- font Awesome -->
+    <link href="~/Assets/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- google font -->
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+    @*<link href="~/Assets/fonts/Pangolin-Regular.ttf" rel='stylesheet' type='text/css'>*@
+
+    <!-- Personal Theme style -->
+    <link href="~/Assets/css/style.css" rel="stylesheet" type="text/css" />
+
+    <!-- jQuery  -->
+    @*<script src="https://code.jquery.com/jquery-1.12.4.js"></script>*@
+    <script src="~/Assets/plugins/jquery-1.12.4.js"></script>
+  
+    <!-- JQuery UI-->
+    @*<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>*@
+    <script src="~/Assets/plugins/jquery-ui.js"></script>
+    @*<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">*@
+    @*<link href="~/Assets/plugins/jquery-ui.css" rel="stylesheet" />*@
+    <link href="~/Assets/plugins/jquery-ui.min.css" rel="stylesheet" />
+    
+    <!-- Jquery Grid-->
+    @*<link href="http://www.ok-soft-gmbh.com/jqGrid/jquery.jqGrid-4.5.4/css/ui.jqgrid.css" rel="stylesheet" />*@
+    <link href="~/Assets/plugins/jquerygrid/ui.jqgrid.css" rel="stylesheet" />
+    @*<script src="http://www.ok-soft-gmbh.com/jqGrid/jquery.jqGrid-4.5.4/js/jquery.jqGrid.src.js"></script>*@
+    <script src="~/Assets/plugins/jquerygrid/jquery.jqGrid.src.js"></script>
+    @*<script src="http://www.ok-soft-gmbh.com/jqGrid/jquery.jqGrid-4.5.4/js/i18n/grid.locale-es.js"></script>*@
+    <script src="~/Assets/plugins/jquerygrid/grid.locale-es.js"></script>
+
+    <!-- Toastr Notifications -->
+    <link href="~/Assets/plugins/toastr.css" rel="stylesheet" />
+
+    <!-- Bootstrap Select -->
+    <link href="~/Assets/plugins/bootstrap-select-1.12.2/dist/css/bootstrap-select.min.css" rel="stylesheet" />
+    <script src="~/Assets/plugins/bootstrap-select-1.12.2/dist/js/bootstrap-select.min.js"></script>
+
+    <!-- Bootstrap checkbox -->
+    <link href="~/Assets/plugins/bootstrap-checkbox-x-7d45761/css/checkbox-x.min.css" rel="stylesheet" />
+    <script src="~/Assets/plugins/bootstrap-checkbox-x-7d45761/js/checkbox-x.min.js"></script>
+
+    <style type="text/css">
+        .ui-widget-header .ui-icon { 
+             background-image: url("../Assets/img/Ui-icons_222222_256x240.png");
+         } 
+        .ui-icon 
+        {
+            background-image: url("../Assets/img/Ui-icons_222222_256x240.png");
+        }
+        .ui-icon-white 
+        {
+            background-image: url("../Assets/img/ui-icons_ffffff_256x240.png");
+        }
+        .texto-centrado
+        {
+            text-align: center !important;
+        }
+        .ibread
+        {
+            margin-right:5px;
+        }
+    </style>
+
+    <script type="text/javascript">
+        $.jgrid.no_legacy_api = true;
+        $.jgrid.useJSON = true;
+    </script>
+
+    <script type="text/javascript">
+
+        $(function () {
+
+            //Signal R functions =>
+            // Referenciar la instancia del "hub"
+            var chat = $.connection.messageHub;
+
+            $.connection.hub.start().done(function () {
+                chat.server.notify($.connection.hub.id);
+                chat.server.getMyNotifications('@Casuarinas.Helpers.SessionHelper.GetUser()');
+            });
+
+            // Crear una función para que el "hub" pueda realizar la llamada y actualizar el número de mensajes del usuario
+            chat.client.updateNumberMessages = function (number) {
+                // Actualizar la página.
+                $("#number_messages").text(htmlEncode(number));
+                $("#label_messages").text(htmlEncode(number));
+            };
+
+
+            //Aplication functions =>
+            $("#btnSave").button().on("click", function () {
+                $("#@ViewBag.SaveAction").click();
+            });
+
+            $("#btnBack").button().on("click", function () {
+                $('#@ViewBag.BackAction').click();
+            });
+
+            $("#btnCancel").button().on("click", function () {
+                $("#@ViewBag.BackAction").click();
+            });
+
+            $("#btnEditar").button().on("click", function () {
+                $("#@ViewBag.EditAction").click();
+            });
+
+            $("#btnNuevo").button().on("click", function () {
+                $("#@ViewBag.NewAction").click();
+            });
+
+            $("#btnImportar").button().on("click", function () {
+                $("#@ViewBag.ImportarAction").click();
+            });
+            $("#btnExportar").button().on("click", function () {
+                $("#@ViewBag.ExportarAction").click();
+            });
+
+        });
+
+        // This optional function html-encodes messages for display in the page.
+        function htmlEncode(value) {
+            var encodedValue = $('<div />').text(value).html();
+            return encodedValue;
+        }
+
+        function getDate(element) {
+            var date;
+            try {
+                date = $.datepicker.parseDate("yy-mm-dd", element.value);
+            } catch (error) {
+                date = null;
+            }
+
+            return date;
+        }
+
+        function base_url(url) {
+            return '@(Url.Content("~/"))' + url;
+        }
+
+        function redirect(href) {
+            window.location.href = '@(Url.Content("~/"))' + href;
+        }
+
+        function jqGridStart(id, pager, url, conf, actionAdd, actionEdit, actionDel) {
+            var grid = $("#" + id);
+
+            var start = {
+                url: base_url(url),
+                datatype: 'json',
+                mtype: 'POST',
+                rowNum: 10,
+                rowList: [10, 20, 30],
+                pager: '#' + pager,
+                sortname: (conf.sortname == undefined ? 'id' : null),
+                sortorder: (conf.sortorder == undefined ? 'desc' : null),
+                viewrecords: true,
+                autoencode: true,
+                ignoreCase: true,
+                autowidth: true,
+                rownumbers: true,
+                cmTemplate: { editable: true },
+                height: 'auto'
+            };
+
+            for (key in conf) {
+                start[key] = conf[key];
+            }
+
+            grid.jqGrid(start)
+                .navGrid('#' + pager,
+                        { edit: true, add: true, del: true, search: false, refresh: true },
+                        {
+                            //Edit options
+                            zIndex: 100,
+                            url: actionEdit,
+                            closeOnEscape: true,
+                            closeAfterEdit: true,
+                            recreateForm: true,
+                            afterComplete: function (response) {
+                                if (response.responseText) {
+                                    notificacion(1, response.responseText);
+                                } else {
+                                    notificacion(0, "Registro modificado con éxito");
+                                }
+                            }
+                        },
+                        {
+                            //Add options
+                            zIndex: 100,
+                            url: actionAdd,
+                            closeOnEscape: true,
+                            closeAfterAdd: true,
+                            afterComplete: function (response) {
+                                if (response.responseText) {
+                                    notificacion(1, response.responseText);
+                                } else {
+                                    notificacion(0, "Registro creado con éxito");
+                                }
+                            }
+                        },
+                        {
+                            //Del options
+                            zIndex: 100,
+                            url: actionDel,
+                            closeOnEscape: true,
+                            closeAfterDelete: true,
+                            recreateForm: true,
+                            msg: '¿Estás seguro de eliminar este registro?',
+                            afterComplete: function (response) {
+                                if (response.responseText) {
+                                    notificacion(1, response.responseText);
+                                } else {
+                                    notificacion(0, "Registro eliminado");
+                                }
+                            }
+                        });
+
+            return grid;
+        }
+
+        function notificacion(tipo, texto) {
+            if (texto) {
+                toastr.options = {
+                    "closeButton": true,
+                    "debug": false,
+                    "newestOnTop": true,
+                    "progressBar": true,
+                    "positionClass": "toast-top-right",
+                    "preventDuplicates": true,
+                    "onclick": null,
+                    "showDuration": "3000",
+                    "hideDuration": "3000",
+                    "timeOut": "5000",
+                    "extendedTimeOut": "3000",
+                    "showEasing": "swing",
+                    "hideEasing": "linear",
+                    "showMethod": "fadeIn",
+                    "hideMethod": "fadeOut"
+                };
+                tipo == 0 ? toastr.info(texto) : toastr.error(texto);
+            }
+        }
+
+    </script>
+
+
+</head>
+<body class="skin-blue">
+    <!-- header logo: style can be found in header.less -->
+    <header class="header">
+        <a href="~/Home" class="logo" style="font-size:inherit">
+            <!-- Add the class icon to your logo image or logo icon to add the margining -->
+            @config.nombre_empresa
+        </a>
+        <!-- Header Navbar: style can be found in header.less -->
+        <nav class="navbar navbar-static-top" role="navigation">
+            <!-- Sidebar toggle button-->
+            <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <div class="navbar-right">
+                <ul class="nav navbar-nav">
+                    <!-- Messages: style can be found in dropdown.less-->
+                    <li class="dropdown messages-menu">
+                        <a href="@Url.Action("Notificaciones","Home")" class="dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-globe"></i>
+                            <span id="number_messages" class="label label-success"></span>
+                        </a>
+                        <ul class="dropdown-menu" style="width:300px">
+                            <li class="header">Tienes <span id="label_messages"></span> notificaciones</li>
+                            <li>
+                                <!-- inner menu: contains the actual data -->
+                                <ul class="menu">
+                                    <!-- start message -->
+                                        @{
+                                            Html.RenderAction("Notificaciones", "Home");
+                                         }
+                                    <!-- end message -->
+                                </ul>
+                            </li>
+                            <li class="footer"><a href="@Url.Action("Index","Home")">Ver todas las notificaciones</a></li>
+                        </ul>
+                    </li>
+
+
+                    <!-- User Account: style can be found in dropdown.less -->
+                    <li class="dropdown user user-menu">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-user"></i>
+                            <span> @(usuario != null ? usuario.nombre : "Unknown") <i class="caret"></i></span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-custom dropdown-menu-right">
+                            <li class="dropdown-header text-center">Cuenta</li>
+
+                       <!--     <li>
+                                <a href="#">
+                                    <i class="fa fa-clock-o fa-fw pull-right"></i>
+                                    <span class="badge badge-success pull-right">10</span> Updates</a>
+                                <a href="#">
+                                    <i class="fa fa-envelope-o fa-fw pull-right"></i>
+                                    <span class="badge badge-danger pull-right">5</span> Messages</a>
+                                <a href="#"><i class="fa fa-magnet fa-fw pull-right"></i>
+                                    <span class="badge badge-info pull-right">3</span> Subscriptions</a>
+                                <a href="#"><i class="fa fa-question fa-fw pull-right"></i><span class="badge pull-right">11</span> FAQ</a>
+                            </li>
+
+                            <li class="divider"></li>   -->
+
+                            <li>
+                                <a href="@Url.Action("index", "Perfil")">
+                                    <i class="fa fa-user fa-fw pull-right"></i>
+                                    @Casuarinas.Helpers.Strings_ES.MASTER_NAV_ACCOUNT_SUB_MENU_PROFILE
+                                </a>
+                                @if (usuario != null && usuario.cuentaWeb.Equals("manager"))
+                                {
+                                    <a data-toggle="modal" href="@Url.Action("index", "Menu")">
+                                    <i class="fa fa-cog fa-fw pull-right"></i>
+                                        @Casuarinas.Helpers.Strings_ES.MASTER_NAV_ACCOUNT_SUB_MENU_OPCIONMENU
+                                    </a>
+                                }
+                            </li>
+
+                            <li class="divider"></li>
+
+                            <li>
+                                <a href="@Url.Action("logout", "Autentificacion")"><i class="fa fa-sign-out fa-fw pull-right"></i>@Casuarinas.Helpers.Strings_ES.MASTER_NAV_ACCOUNT_SUB_MENU_LOGOUT</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                </ul>
+            </div>
+        </nav>
+    </header>
+    <div class="wrapper row-offcanvas row-offcanvas-left">
+        <!-- Left side column. contains the logo and sidebar -->
+        <aside id="lat-sidebar" class="left-side sidebar-offcanvas">
+            <!-- sidebar: style can be found in sidebar.less -->
+            <section class="sidebar">
+                <!-- Sidebar user panel -->
+                <div class="user-panel">
+                    <div class="pull-left image">
+                        <img src="~/Assets/img/icono-innovacion-tecnologica.png" class="img-circle" alt="User Image" />
+                    </div>
+                    <div class="pull-left info">
+                        <p> @(usuario != null ? usuario.nombre : "Unknown") </p>
+
+                        <a href="#"><i class="fa fa-circle text-success"></i>Conectado</a>
+                    </div>
+                </div>
+                 @*search form 
+                <form action="#" method="get" class="sidebar-form">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="@Casuarinas.Helpers.Strings_ES.MASTER_SEARCH" />
+                        <span class="input-group-btn">
+                            <button type='submit' name='seach' id='search-btn' class="btn btn-flat"><i class="fa fa-search"></i></button>
+                        </span>
+                    </div>
+                </form>*@
+                @{
+                    Html.RenderAction("MenuPrincipal", "Home");
+                 }
+            </section>
+            <!-- /.sidebar -->
+        </aside>
+
+        <!-- Right side column. Contains the navbar and content of the page -->
+        <aside class="right-side">
+
+            <!-- Main content -->
+            <section class="content">
+                @RenderBody()
+            </section>
+
+        </aside>
+        <!-- /.right-side -->
+    </div>
+    <!-- ./wrapper -->
+
+
+
+
+    <!-- Footer -->
+    <div class="footer" style="background-color:#3c8dbc; color:white; padding:6px; width: 100%; left: 0px; bottom:0px; right:0px; margin-bottom:0px; position:fixed; z-index:100">
+            <div role="navigation">
+
+                <label style="margin-top:8px; font-family:Lato" class="navbar-btn sidebar-toggle">
+                    Copyright &copy MSS Seidor, @DateTime.Now.Year
+                </label>
+
+                
+                <div class="navbar-right">
+                    @if (ViewBag.Importar != null && ViewBag.Importar.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnImportar" class="btn btn-action btn_importar" style="color:white"><i class="fa fa-upload" aria-hidden="true"></i> IMPORTAR</a>
+                    }
+                    @if (ViewBag.Save != null && ViewBag.Save.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnSave" class="btn btn-action btn_guardar" style="color:white"> <i class="fa fa-check" aria-hidden="true"></i> GUARDAR</a>
+                    }
+                    @if (ViewBag.New != null && ViewBag.New.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnNuevo" class="btn" style="color:white" role="button"><i class="fa fa-plus" aria-hidden="true"></i> NUEVO</a>
+                    }
+                    @if (ViewBag.Cancel != null && ViewBag.Cancel.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnCancel" class="btn btn-action btn_cancelar" style="color:white"><i class="fa fa-times" aria-hidden="true"></i> CANCELAR </a>
+                    }
+                    @if (ViewBag.Editar != null && ViewBag.Editar.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnEditar" class="btn btn-action btn_editar"  style="color:white"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> EDITAR</a>
+                    }
+                    @if (ViewBag.Back != null && ViewBag.Back.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnBack" class="btn btn-action btn_regresar" style="color:white"><i class="fa fa-reply" aria-hidden="true"></i> REGRESAR</a>
+                    }
+                    @if (ViewBag.Aprobar != null && ViewBag.Aprobar.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnAprobar" class="btn btn-action btn_aprobar" style="color:white"> <i class="fa fa-check" aria-hidden="true"></i> APROBAR</a>
+                    }
+                    @if (ViewBag.Rechazar != null && ViewBag.Rechazar.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnRechazar" class="btn btn-action btn_rechazar" style="color:white"> <i class="fa fa-times" aria-hidden="true"></i> RECHAZAR</a>
+                    }
+
+                    @if (ViewBag.Exportar != null && ViewBag.Exportar.Equals(Casuarinas.Helpers.Constantes.ENABLED))
+                    {
+                        <a id="btnExportar" class="btn btn-action btn_exportar" href="#" style="color:white"><i class="fa fa-download" aria-hidden="true"></i> EXPORTAR</a>
+                    }
+                                              
+                           <a class="btn btn-action btn_imprimir"  href="#" style="color:white; display: none"><i class="ion-printer"></i> IMPRIMIR</a>
+                          <a class="btn btn-action btn_exportar"  href="#" style="color:white; display: none"><i class="fa fa-download" aria-hidden="true"></i> EXPORTAR</a>
+                            <!--style="display: none" for hidden an element -->
+                </div> 
+            </div>
+    </div>
+
+
+    </>
+
+    <!-- Bootstrap -->
+    <script src="~/Assets/js/bootstrap.min.js" type="text/javascript"></script>
+
+    <!-- Ajax form and validation whit JS -->
+    <script src="~/Assets/js/jquery.validate.min.js"></script>
+    <script src="~/Assets/js/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/Assets/js/jquery.form.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="~/Assets/js/Director/app.js" type="text/javascript"></script>
+
+    <!-- Toastr Notifications -->
+    <script src="~/Assets/plugins/toastr.js"></script>
+
+    <!-- BootBox Confirm -->
+    <script src="~/Assets/plugins/bootbox.min.js"></script>
+    
+    <!--Reference the SignalR library. -->
+    <script src="~/Scripts/jquery.signalR-1.1.4.js"></script>
+
+    <!--Reference the autogenerated SignalR hub script. -->
+    <script src="~/signalr/hubs"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,40 @@
+﻿@model List<Model.CentroCostoNivel>
+
+<style>
+  #sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+  #sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 48px; }
+  #sortable li span { position: absolute; margin-left: -1.3em; }
+</style>
+
+<div class="table-responsive">
+    <table id="tbNiveles" class="table table-bordered table-hover">
+        @if(ViewBag.Niveles != null){
+            <thead>
+                <tr class="ui-widget-header">
+                <th class="texto-centrado">Descripción</th>
+                <th class="texto-centrado">Prioridad</th>
+                <th class="texto-centrado">Usuario responsable</th>
+                <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach(var item in ViewBag.Niveles)
+                {
+                    <tr>
+                        <td class="id" style="display:none">@item.temporal_id</td>
+                        <td class="des">@item.descripcion</td>
+                        <td id="@item.id" class="texto-centrado"><span class='badge label-primary'>@item.prioridad </span></td>
+                        <td class="user">@item.Usuario_Nombre</td>
+                        <td class="texto-centrado">
+                            <button type="button" class='removebutton ui-button ui-widget ui-corner-all ui-button-icon-only' 
+                                style='width:40px; height:32px' title='Eliminar'> 
+                                <span class='ui-icon ui-icon-trash'></span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+</div>

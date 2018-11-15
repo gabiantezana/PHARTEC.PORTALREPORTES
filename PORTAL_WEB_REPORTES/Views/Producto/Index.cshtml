@@ -1,0 +1,85 @@
+﻿@model List<Model.Producto>
+@{
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Rol");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.exporta != null && permisos.exporta == true)
+    {
+        ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.ExportarAction = "frmProdExp";
+    }
+
+
+    ViewBag.Title = "Producto";
+}
+
+
+@*<script>
+    $(document).ready(function () {
+
+        $("#frmProdExp").on('click', function () {
+            $.ajax({
+                //url: 'http://192.168.1.52:8000/WS/services/purchaseorders/slopesPurchaseOrders.xsodata/getBarCodes?$format=json&$top=1000',
+                url: 'http://192.168.1.52:8000/WS/services/items/getItems.xsjs',
+                xhrFields: {
+                    withCredentials: false
+                },
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = data;
+                },
+                error: function (xhr, status, errorThrown ) {
+                    var error = errorThrown || xhr.statusText || xhr.responseText;
+                    notificacion(1, error);
+                }
+            });
+        })
+         
+    })
+    //No work.
+</script>*@
+
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-cog" style="margin-right:4px"></i>Productos</li>
+</ol>
+
+<div class="row">
+
+    <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Productos</b>
+            </header>
+            <div class="panel-body table-responsive">
+                <div class="col-md-1"></div>
+                <div class="col-md-10">
+                    <table id="tbRoles" class="table table-bordered table-hover">
+                        <thead>
+                            <tr class="ui-widget-header">
+                                <th class="texto-centrado">Código</th>
+                                <th class="texto-centrado">Descripción</th>
+                                <th class="texto-centrado">Precio</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="texto-centrado">@item.id.ToString("D9")</td>
+                                    <td>@item.name</td>
+                                    <td>@item.precio</td>
+                                   
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<button type="button" id="frmProdExp" style="display:none" onclick="location.href='@Url.Action("oDataList", "Producto")'">Nuevo</button>

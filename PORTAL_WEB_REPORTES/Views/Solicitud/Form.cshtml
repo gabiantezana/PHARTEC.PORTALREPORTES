@@ -1,0 +1,769 @@
+﻿@model Model.Solicitud
+
+@{
+    ViewBag.Save = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.New = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.SaveAction = "btnSolSave";
+
+    if (Session[Casuarinas.Helpers.Constantes.SESSION_FROM_PENDENTS] != null)
+    {
+        ViewBag.BackAction = "frmPenB";
+        var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Pendientes");
+        TempData["clicked"] = permisos.Menu_id;
+    }
+    else
+    {
+        ViewBag.BackAction = "frmSolB";
+        var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Solicitud");
+        TempData["clicked"] = permisos.Menu_id;
+    }
+
+    if (Model.id > 0)
+    {
+        ViewBag.Cancel = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Back = Casuarinas.Helpers.Constantes.DISABLED;
+    }
+    else
+    {
+        ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Cancel = Casuarinas.Helpers.Constantes.DISABLED;
+    }
+
+    ViewBag.Title = (Model.id > 0 ? "S" + Model.id.ToString("D9") : "Nuevo registro");
+}
+
+<style type="text/css">
+    .ui-autocomplete {
+      position: fixed;
+      top: 100%;
+      left: 0;
+      z-index: 1051 !important;
+      float: left;
+      display: none;
+      min-width: 160px;
+      width: 160px;
+      padding: 4px 0;
+      margin: 2px 0 0 0;
+      list-style: none;
+      background-color: #ffffff;
+      border-color: #ccc;
+      border-color: rgba(0, 0, 0, 0.2);
+      border-style: solid;
+      border-width: 1px;
+      -webkit-border-radius: 2px;
+      -moz-border-radius: 2px;
+      border-radius: 2px;
+      -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+      -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+      -webkit-background-clip: padding-box;
+      -moz-background-clip: padding;
+      background-clip: padding-box;
+      *border-right-width: 2px;
+      *border-bottom-width: 2px;
+    }
+    .ui-menu-item > a.ui-corner-all {
+        display: block;
+        padding: 3px 15px;
+        clear: both;
+        font-weight: normal;
+        line-height: 18px;
+        color: #555555;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    .ui-state-hover, .ui-state-active {
+          color: #ffffff;
+          text-decoration: none;
+          background-color: #0088cc;
+          border-radius: 0px;
+          -webkit-border-radius: 0px;
+          -moz-border-radius: 0px;
+          background-image: none;
+    }
+</style>
+
+<script>
+    $(function () {
+
+        //Captura de evento "submit" al formulario principal
+        $("#frm-solicitud").submit(function () {
+            var form = $(this);
+
+            if (form.validate()) {
+
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Procesando...</div>',
+                    closeButton: false
+                });
+
+                form.ajaxSubmit({
+                    dataType: 'JSON',
+                    type: 'POST',
+                    url: form.attr('action'),
+                    success: function (r) {
+                        dialog.modal('hide');
+                        if (r.respuesta) {
+                            window.location.href = '@(Url.Content("~/"))' + r.redirect;
+
+                            //Signal R notification
+                            // Referenciar la instancia del "hub"  
+                            var chat = $.connection.messageHub;
+                            chat.server.update(r.extraValue1);
+
+                        } else {
+                            if (r.error != "") {
+                                notificacion(1, r.error);
+                            }
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        dialog.modal('hide');
+                        notificacion(1, errorThrown);
+                    }
+                });
+            }
+
+            return false;
+        });
+
+        var myElem;
+        //Eliminar una fila de los detalles de la solicitud
+        $(document).on('click', 'button.removebutton', function () {
+
+            myElem = this;
+
+            bootbox.confirm({
+                title: "Eliminar Item",
+                message: "¿Está seguro de eliminar este registro?",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Eliminar'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+
+                        var dialog = bootbox.dialog({
+                            message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Eliminando Item...</div>',
+                            closeButton: false
+                        });
+
+                        var id;
+                        $($(myElem).closest('tr')).each(function () {
+                            id = $(this).find(".id").html();
+                        });
+
+                        $.ajax({
+                            type: 'POST',
+                            traditional: true,
+                            url: '@(Url.Content("~/"))' + 'solicitud/DataDetalle',
+                            data: { deleteId: id },
+                            success: function (data) {
+                                $('#cc-niveles').html(data);
+                                dialog.modal('hide');
+                                $(myElem).closest('tr').remove();
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                dialog.modal('hide');
+                                notificacion(1, errorThrown);
+                            }
+                        });
+                    }
+                }
+            });
+
+            return false;
+        });
+
+        //Editar una fila de los detalles de la solicitud
+        $(document).on('click', 'button.editbutton', function () {
+
+            myElem = this;
+            setDefaultValues();
+            
+            var id, cSap, des, fec, cant, comm;
+            //Capturar los valores de la fila
+            $($(myElem).closest('tr')).each(function () {
+                id = $(this).find(".id").html();
+                cSap = $(this).find(".csap").html();
+                des = $(this).find(".des").html();
+                fec = $(this).find(".fec").html();
+                cant = $(this).find(".cant").html();
+                comm = $(this).find(".comm").html();
+            });
+
+            //Establecer los valores capturados en los elementos del dialog
+            $(".modal-body #ItemTid").val(id);
+            $(".modal-body #ItemCod").val(cSap);
+            $(".modal-body #ItemDes").val(des);
+            $(".modal-body #ItemFec").val(fec);
+            $(".modal-body #ItemCan").val(cant);
+            $(".modal-body #ItemCom").val(comm);
+            $("select").selectpicker('refresh');
+
+            //Mostrar dialog
+            $('#modalItems').modal('show');
+
+            return false;
+        });
+
+
+        //Capturar el evento on change del datapicker 
+        var from = $("#fechaRegistro").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            to.datepicker("option", "minDate", getDate(this));
+            to2.datepicker("option", "minDate", getDate(this));
+            fecNec.datepicker("option", "minDate", getDate(this));
+        }), to = $("#fechaNecesaria").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            from.datepicker("option", "maxDate", getDate(this));
+            fecNec.datepicker('setDate', getDate(this));
+        }), to2 = $("#fechaVencimiento").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            from.datepicker("option", "maxDate", getDate(this));
+        }), fecNec = $(".modal-body #ItemFec").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        });
+
+        //Establecer las fechas por defecto
+        var current_date = new Date();
+        from.datepicker('setDate', current_date);
+        
+        current_date.setMonth(current_date.getMonth() + 1);
+        to.datepicker('setDate', current_date);
+        to2.datepicker('setDate', current_date);
+        fecNec.datepicker('setDate', to2.val());
+
+        //Establecer el estilo de animación para las "Fechas" (todos bajo la clase 'datepicker')
+        $(".datepicker").datepicker("option", "showAnim", "clip");
+        $(".datepicker").datepicker("option", "dayNames", ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]);
+        $(".datepicker").datepicker("option", "dayNamesMin", ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"]);
+
+        //Establecer el estilo para el "combobox"
+        $("#tipoSolicitud").selectpicker();
+        $("#empresa").attr("data-live-search", "true");    //Habilitar edittext autocomplete
+        $("#empresa").selectpicker();
+        $("#centroCosto").attr("data-live-search", "true");   //Habilitar edittext autocomplete
+        $("#centroCosto").selectpicker();
+        $("#ItemCod").attr("data-live-search", "true");   //Habilitar edittext autocomplete
+        $("#ItemCod").selectpicker();
+
+        //Evento para capturar la selección del tipo de artículo "Servicio" o "Artículo"
+        $(document).on('change', '#tipoSolicitud', function (event) {
+            
+            if ($(this).val() === '') {
+                return false;
+            }
+
+            var rowCount = $('#tbNiveles tr').length;
+            if (rowCount == 1)
+                return false;
+
+            bootbox.confirm({
+                title: "Solicitud",
+                message: "Con las modificaciones se borrarán los datos. ¿Desea continuar?",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirmar'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+                        //Limpiar los elementos existentes
+                        $.ajax({
+                            type: 'POST',
+                            url: '@(Url.Content("~/"))' + 'solicitud/DataDetalle',
+                            data: {
+                                deleteAll: true
+                            },
+                            success: function (data) {
+                                $('#cc-niveles').html(data);
+                            }
+                        });
+                    } else {
+                        if ($("#tipoSolicitud").val() == "S") {
+                            $("#tipoSolicitud").val('A');
+                            $("select").selectpicker('refresh');
+                        } else {
+                            $("#tipoSolicitud").val('S');
+                            $("select").selectpicker('refresh');
+                        }
+                    }
+                }
+            });
+        });
+
+        //Evento para capturar la selección del tipo de empresa y recargar el combo de centros de costo
+        $(document).on('change', '#empresa', function (event) {
+
+            refreshSelects();
+
+            var rowCount = $('#tbNiveles tr').length;
+            if (rowCount == 1)
+                return false;
+
+            var object = this;
+
+            bootbox.confirm({
+                title: "Solicitud",
+                message: "Con las modificaciones se borrarán los datos. ¿Desea continuar?",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirmar'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+                        //Limpiar los elementos existentes
+                        $.ajax({
+                            type: 'POST',
+                            url: '@(Url.Content("~/"))' + 'solicitud/DataDetalle',
+                            data: {
+                                deleteAll: true
+                            },
+                            success: function (data) {
+                                $('#cc-niveles').html(data);
+                            }
+                        });
+
+                        $.data(object, 'current', $("#empresa").val());
+
+                    } else {
+                        $("#empresa").val($.data(object, 'current'));
+                        $("select").selectpicker('refresh');
+                    }
+                }
+            });
+
+            return false;
+        });
+
+        function refreshSelects() {
+            //Limpiar y recargar la lista de centros de costo
+            $("#centroCosto").empty();
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("getcentroCostoXEmpresa","centroCosto")',
+                dataType: 'json',
+                data: { idEmpresa: $("#empresa").val() },
+                success: function (list) {
+                    $.each(list, function (i, list) {
+                        $("#centroCosto").append('<option value="' + list.Value + '">' +
+                                list.Text + '</option>');
+                    });
+                    $("select").selectpicker('refresh');
+                },
+                error: function (ex) {
+                    notificacion(1, 'Failed to retrieve Centros de costo.' + ex);
+                }
+            });
+
+            //Limpiar y recargar la lista de artículos
+            $("#ItemCod").empty();
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("getArticuloXEmpresa","Articulo")',
+                dataType: 'json',
+                data: { idEmpresa: $("#empresa").val() },
+                success: function (list) {
+                    $.each(list, function (i, list) {
+                        $("#ItemCod").append('<option value="' + list.Value + '" title="' + list.Value + '">' +
+                                (list.Value + " - " + list.Text) + '</option>');
+                    });
+                    $("select").selectpicker('refresh');
+                },
+                error: function (ex) {
+                    notificacion(1, 'Failed to retrieve Items.' + ex);
+                }
+            });
+        }
+
+        //Evento para capturar la selección del artículo y mostrar la descripción
+        $(document).on('change', '.modal-body #ItemCod', function (event) {
+            var arr = $('.modal-body #ItemCod option:selected').text().split('-');
+            $(".modal-body #ItemDes").val('');
+            $(".modal-body #ItemDes").val(arr.slice(1).join('-').trim());
+        });
+
+        //Agregar nuevo Artículo/Servicio a la solicitud
+        $("#btnModalSave").on('click', function () {
+            
+            var temporal_id = $(".modal-body #ItemTid"),
+                codigo = $(".modal-body #ItemCod"),
+                descripcion = $(".modal-body #ItemDes"),
+                fecha = $(".modal-body #ItemFec"),
+                cantidad = $(".modal-body #ItemCan"),
+                comentario = $(".modal-body #ItemCom");
+
+            if (codigo.val() === '' && $("#tipoSolicitud").val() === 'A') {
+                notificacion(1, "Debe elegir un artículo");
+                return false; 
+            } else if (descripcion.val() === '') {
+                notificacion(1, "Debe ingresar la descripción");
+                return false;
+            } else if (fecha.val() === '') {
+                notificacion(1, "Debe seleccionar la fecha necesaria");
+                return false;
+            } else if (cantidad.val() === '' || cantidad.val() <= 0) {
+                notificacion(1, "Debe ingresar una cantidad válida");
+                return false;
+            }
+
+            var btn = $(this);
+            btn.button('loading');
+            setTimeout(function () {
+                btn.button('reset')
+            }, 6000);
+
+            if (temporal_id.val() === '') {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Agregando Item...</div>',
+                    closeButton: false
+                });
+            } else {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Modificando Item...</div>',
+                    closeButton: false
+                });
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '@(Url.Content("~/"))' + 'solicitud/DataDetalle',
+                data: {
+                    temporal_id: temporal_id.val(),
+                    codigo: codigo.val(),
+                    descripcion: descripcion.val(),
+                    fecha: fecha.val(),
+                    cantidad: cantidad.val(),
+                    comentario: comentario.val()
+                },
+                success: function (data) {
+                    $('#cc-niveles').html(data);
+                    $('#modalItems').modal('toggle');
+                    dialog.modal('hide');
+                    btn.button('reset');
+                }
+            }); 
+        });
+
+
+        $("#btnAddItem").on('click', function () {
+            $('.modal-body #modal-form')[0].reset();
+            setDefaultValues();
+        });
+
+        function setDefaultValues() {
+            fecNec.datepicker('setDate', to2.val());
+            if ($("#tipoSolicitud").val() == "A") {
+                $(".modal-body #ItemTip").val('Artículo');
+                $(".modal-body #ItemCod").prop("disabled", false);
+                $(".modal-body #ItemCod").val('');
+                $(".modal-body #ItemDes").val('');
+                $("select").selectpicker('refresh');
+            } else if ($("#tipoSolicitud").val() == "S") {
+                $(".modal-body #ItemTip").val('Servicio');
+                $(".modal-body #ItemCod").prop("disabled", true);
+                $(".modal-body #ItemCod").empty();
+                $(".modal-body #ItemDes").val('');
+                $("select").selectpicker('refresh');
+            }
+
+            if ($('#empresa').val() !== '' && $("#ItemCod option").length <= 2) {
+                $("#ItemCod").empty();
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("getArticuloXEmpresa","Articulo")',
+                    dataType: 'json',
+                    data: { idEmpresa: $("#empresa").val() },
+                    success: function (list) {
+                        $.each(list, function (i, list) {
+                            $("#ItemCod").append('<option value="' + list.Value + '" title="' + list.Value + '">' +
+                                    (list.Value + " - " + list.Text) + '</option>');
+                        });
+                        $("select").selectpicker('refresh');
+                    },
+                    error: function (ex) {
+                        notificacion(1, 'Failed to retrieve Items.' + ex);
+                    }
+
+                });
+            }
+        };
+
+    });
+
+</script>
+
+
+<ol class="breadcrumb">
+  <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    @if (Session[Casuarinas.Helpers.Constantes.SESSION_FROM_PENDENTS] != null){
+        <li><a href="~/Pendientes"><i class="fa fa-file-text ibread"></i>Solicitudes Pendientes</a></li>
+    }else{
+        <li><a href="~/Solicitud"><i class="fa fa-file-text-o ibread"></i>Mis solicitudes</a></li>
+    }
+  <li class="active"><i class="fa fa-file ibread"></i>@(Model.id > 0 ? "S" + Model.id.ToString("D9") : "Nuevo registro")</li>
+</ol>
+
+@using (Html.BeginForm("Guardar", "Solicitud", FormMethod.Post, new { id = "frm-solicitud" }))
+{
+    if (Model.id > 0)
+    {
+        <script>
+            $(function () {
+                //Limpiar y recargar la lista de artículos
+                $("#ItemCod").empty();
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("getArticuloXEmpresa","Articulo")',
+                    dataType: 'json',
+                    data: { idEmpresa: $("#empresa").val() },
+                    success: function (list) {
+                        $.each(list, function (i, list) {
+                            $("#ItemCod").append('<option value="' + list.Value + '" title="' + list.Value + '">' +
+                                    (list.Value + " - " + list.Text) + '</option>');
+                        });
+                        $("select").selectpicker('refresh');
+                    },
+                    error: function (ex) {
+                        notificacion(1, 'Failed to retrieve Items.' + ex);
+                    }
+
+                });
+
+                $("#fechaRegistro").datepicker('setDate', '@string.Format("{0:yyyy-MM-dd}", @Model.fechaRegistro)');
+                $("#fechaNecesaria").datepicker('setDate', '@string.Format("{0:yyyy-MM-dd}", @Model.fechaNecesaria)');
+                $("#fechaVencimiento").datepicker('setDate', '@string.Format("{0:yyyy-MM-dd}", @Model.fechaVencimiento)');
+
+                $("#empresa").prop("disabled", true);
+                $("#centroCosto").prop("disabled", true);
+                $("select").selectpicker('refresh');
+            });
+        </script>
+    }
+    
+    @Html.HiddenFor(u => u.id)
+    @Html.HiddenFor(u => u.Usuario_id)
+    @Html.HiddenFor(u => u.Usuario_nombre)
+    @Html.HiddenFor(u => u.Usuario_correo)
+    
+    <div class="panel panel-default" id="parentIP">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentIP" href="#divIP"><i class="fa fa-user" aria-hidden="true" style="margin-right:5px"></i> Información general</a>
+        </div>
+        <div id="divIP" class="panel-collapse collapse in">
+            <div class="panel-body" style="margin-right:25px; margin-left:25px">
+                <div class="form-group">
+                    @Html.LabelFor(u => u.id, "Identificador")
+                    @Html.TextBoxFor(u => u.id, new { @class = "form-control", @disabled = "disabled" })
+                    @Html.ValidationMessageFor(u => u.id, null, new { @class = "label label-danger" })
+                </div>
+                <div class="form-group" style="display:none">
+                    @Html.LabelFor(u => u.Usuario_id, "Código Usuario")
+                    @Html.TextBoxFor(u => u.Usuario_id, new { @class = "form-control", @disabled = "disabled" })
+                    @Html.ValidationMessageFor(u => u.Usuario_id, null, new { @class = "label label-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(u => u.Usuario_nombre, "Nombre usuario")
+                    @Html.TextBoxFor(u => u.Usuario_nombre, new { @class = "form-control", @disabled = "disabled" })
+                    @Html.ValidationMessageFor(u => u.Usuario_nombre, null, new { @class = "label label-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(u => u.Usuario_correo, "Correo electrónico")
+                    @Html.TextBoxFor(u => u.Usuario_correo, new { @class = "form-control", @disabled = "disabled" })
+                    @Html.ValidationMessageFor(u => u.Usuario_correo, null, new { @class = "label label-danger" })
+                </div>
+                
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-sm-2 col-xs-3">
+                            @Html.LabelFor(u => u.fechaRegistro, "Fecha registro", new { @style = "margin-top:4px" })
+                        </div>
+                        <div class="col-sm-4 col-xs-15">
+                            <div style="float:left">
+                                @Html.TextBoxFor(u => u.fechaRegistro, new { @class = "form-control datepicker" })
+                                @Html.ValidationMessageFor(u => u.fechaRegistro, null, new { @class = "label label-danger" })
+                            </div>
+                        </div>
+                        <div class="col-sm-2 col-xs-3">
+                            @Html.LabelFor(u => u.fechaNecesaria, "Fecha necesaria", new { @style = "margin-top:4px" })
+                        </div>
+                        <div class="col-sm-4 col-xs-15">
+                            <div style="float:left">
+                                @Html.TextBoxFor(u => u.fechaNecesaria, new { @class = "form-control datepicker" })
+                                @Html.ValidationMessageFor(u => u.fechaNecesaria, null, new { @class = "label label-danger" }) 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-sm-2 col-xs-3">
+                            @Html.LabelFor(u => u.fechaVencimiento, "Válido hasta", new { @style = "margin-top:4px" })
+                        </div>
+                        <div class="col-sm-4 col-xs-15">
+                            <div style="float:left">
+                                @Html.TextBoxFor(u => u.fechaVencimiento, new { @class = "form-control datepicker" })
+                                @Html.ValidationMessageFor(u => u.fechaVencimiento, null, new { @class = "label label-danger" })
+                            </div>
+                        </div>
+                        <div class="col-sm-2 col-xs-3">
+                        </div>
+                        <div class="col-sm-4 col-xs-15">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(u => u.empresa, "Empresa")
+                    @Html.DropDownList("empresa", null, null, new { @class = "form-control", @title = "Seleccione..." })
+                    @Html.ValidationMessageFor(u => u.empresa, null, new { @class = "label label-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(u => u.centroCosto, "Centro de costo")
+                    @Html.DropDownList("centroCosto", ViewBag.centroCosto == null ? new SelectList(string.Empty, "Value", "Text") : null, null, new { @class = "form-control", @title = "Seleccione..." })
+                    @Html.ValidationMessageFor(u => u.centroCosto, null, new { @class = "label label-danger" })
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default" id="parentEmp">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentEmp" href="#divEmp"><i class="fa fa-table" aria-hidden="true" style="margin-right:5px"></i> Contenido </a>
+        </div>
+        <div id="divEmp" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row" style="margin:15px">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-2">
+                        <button id="btnAddItem" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalItems">
+                            <span class="ui-icon ui-icon-white ui-icon-plus" style="color:white"></span> AGREGAR ITEM
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="control-label" style="margin-top:5px; float:right" for="tipoSolicitud">Clase de artículo/servicio:</label>
+                    </div>
+                    <div class="col-md-5">
+                        @Html.DropDownList("tipoSolicitud", null, null, new { @class = "form-control", @placeholder = "Seleccione..." })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-10">
+                        <div id="cc-niveles">
+                            @Html.Partial("DataDetalle", Model.SolicitudDetalle)
+                        </div>
+                    </div>
+                </div>
+
+                <br/>
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-5">
+                        @Html.ValidationMessage("detalles", new { @class = "label label-danger", id = "detalles" })
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <button id="btnSolSave" type="submit" class="btn btn-primary btn-lg" style="width:300px;display:none">Guardar</button>
+            <button type="button" id="frmSolB" style="display:none" onclick="location.href='@Url.Action("Index", "Solicitud")'">Volver</button>
+            <button type="button" id="frmPenB" style="display:none" onclick="location.href='@Url.Action("Index","Pendientes")'">Volver</button>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+}
+
+
+
+
+<!-- Modal ITems-->
+<div class="modal fade" id="modalItems" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Agregar Item</h4>
+      </div>
+      <div class="modal-body">
+         <form id="modal-form" class="form-horizontal" style="margin-right:10px; margin-top:10px">
+             <input type="hidden" id="ItemTid"/>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="ItemTip">Tipo Item:</label>
+            <div class="col-sm-8">
+                <input id="ItemTip" class="form-control" disabled="disabled">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="ItemCod">Código Artículo:</label>
+            <div class="col-sm-8">
+              <!-- <input id="ItemCod" class="form-control" placeholder="Ingrese el código del artículo"> -->
+                <select id="ItemCod" class="form-control" title="Seleccione..."><option disabled selected value="-1"> Seleccione... </option></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="ItemDes">Descripción:</label>
+            <div class="col-sm-8">
+              <input id="ItemDes" type="text" class="form-control" placeholder="Ingrese la descripción del artículo">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="ItemFec">Fecha necesaria:</label>
+            <div class="col-sm-8">
+              <input id="ItemFec" class="form-control datepicker" placeholder="Seleccione una fecha...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="ItemCan">Cantidad necesaria:</label>
+            <div class="col-sm-8">
+              <input id="ItemCan" type="number" class="form-control" placeholder="Ingrese la cantidad necesitada">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="ItemCom">Comentarios:</label>
+            <div class="col-sm-8">
+              <input id="ItemCom" type="text" class="form-control">
+            </div>
+          </div>
+        </form> 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button id="btnModalSave" type="button" class="btn btn-primary" data-loading-text="Guardando...">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,143 @@
+﻿
+@{
+    ViewBag.Title = "Detalle de Venta";
+    <link href="~/Assets/css/pestana.css" rel="stylesheet" />
+
+    var datalista = ViewBag.resultado;
+    var totales = ViewBag.totales;
+
+    var esVendedor = ViewBag.esVendedor;
+
+    var datalistaPorVendedor = ViewBag.resultadoPorVendedor;
+    var totalesPorVendedor = ViewBag.totalesPorVendedor;
+
+
+    var datalistaPorDetalle = ViewBag.resultadoPorDetalle;
+    var totalesPorDetalle = ViewBag.totalesPorDetalle;
+
+    var filtros = ViewBag.filtros;
+
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("VentasProducto");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.exporta != null && permisos.exporta == true)
+    {
+        ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+
+        ViewBag.ExportarAction = "frmProdExp";
+        ViewBag.BackAction = "frmUsrB";
+
+    }
+
+}
+
+<script type="text/javascript">
+    $(function () {
+        function sortTableDetail(f, n, table) {
+            var rows = $('#' + table + ' tbody  tr').get();
+
+            rows.sort(function (a, b) {
+
+                var A = getVal(a);
+                var B = getVal(b);
+
+                if (A < B) {
+                    return -1 * f;
+                }
+                if (A > B) {
+                    return 1 * f;
+                }
+                return 0;
+            });
+
+            function getVal(elm) {
+                var v = $(elm).children('td').eq(n).text().toUpperCase().replace(',', '').replace('%', '');
+                if ($.isNumeric(v)) {
+                    v = parseInt(v, 10);
+                }
+                return v;
+            }
+
+            $.each(rows, function (index, row) {
+                $('#' + table).children('tbody').append(row);
+            });
+        }
+        var f_sl = 1;
+        var f_nm = 1;
+
+        $("td[id^='ph3']").click(function () {
+            f_sl *= -1;
+            var n = $("#" + this.id).prevAll().length;
+            sortTableDetail(f_sl, n, 'tbVentasDetalle');
+        });
+    });
+</script>
+<div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+    <div class="tableview tableview-has-footer">
+        <div class="tableview-holder">
+
+            <table id="tbVentasDetalle">
+                <thead>
+                    <tr>
+                        <td id="ph301" caption="#"> </td>
+                        <td id="ph302" caption="Fecha" class="texto-centrado"></td>
+                        <td id="ph303" caption="Documento" class="texto-centrado"></td>
+                        <td id="ph304" caption="Descripción" class="texto-centrado"></td>
+                        <td id="ph305" caption="Cantidad" class="texto-centrado"></td>
+                        <td id="ph306" caption="PVU" class="texto-centrado"></td>
+                        <td id="ph307" caption="Venta" class="texto-centrado"></td>
+                        @if (!esVendedor)
+                        {
+                            <td id="ph308" caption="Compra" class="texto-centrado"></td>
+                            <td id="ph309" caption="Margen" class="texto-centrado"></td>
+                            <td id="ph310" caption="Venta estandarizada" class="texto-centrado"></td>
+                        }
+                    </tr>
+                </thead>
+
+                @if (datalistaPorDetalle != null)
+            {
+                    <tbody>
+                        @{int i = 1;}
+                        @foreach (var item in datalistaPorDetalle)
+                        {
+                            <tr>
+                                <td class="id texto-centrado">@i</td>
+                                <td class="id texto-centrado">@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                <td class="descrip">@item.Documento</td>
+                                <td class="db_name descrip">@item.Description</td>
+                                <td class="db_name texto-centrado">@item.Quantity.ToString("N2")</td>
+                                <td class="db_name texto-centrado">@item.Pvu.ToString("N2")</td>
+                                <td>@item.TotalVenta.ToString("N2")</td>
+                                @if (!esVendedor)
+                                {
+                                    <td>@item.TotalCosto.ToString("N2")</td>
+                                    <td>@item.Margen.ToString("N2")%</td>
+                                    <td>@item.MargenEstandarizado.ToString("N2")</td>
+                                }
+                            </tr>    i++;
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="texto-centrado" colspan="6"><div class="fixed">Totales</div></td>
+                            <td class="texto-centrado"><div class="fixed">@totalesPorDetalle.TotalVentas.ToString("N2")</div></td>
+
+                            @if (!esVendedor)
+                            {
+                                <td class="texto-centrado"><div class="fixed">@totalesPorDetalle.TotalCompras.ToString("N2")</div></td>
+                                <td class="texto-centrado"><div class="fixed">@totalesPorDetalle.TotalMargen.ToString("N2")% </div></td>
+                                <td class="texto-centrado"><div class="fixed">@totalesPorDetalle.TotalMargenEstandarizado.ToString("N2") </div></td>
+                            }
+
+                        </tr>
+
+                    </tfoot>
+
+                            }
+            </table>
+
+        </div>
+    </div>
+    </div>

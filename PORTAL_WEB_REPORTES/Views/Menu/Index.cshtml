@@ -1,0 +1,222 @@
+﻿@{
+    ViewBag.Title = "Menú del sistema";
+
+    Model.Menu model = new Model.Menu();
+    List<Model.Menu> listExm = new List<Model.Menu>();
+    listExm = model.listar();
+    var esVendedor = false;
+}
+
+<script>
+    $(document).ready(function () {
+        CargarItemsMenu();
+        gridExample();
+    })
+
+    function CargarItemsMenu() {
+        var config = {
+            colNames: ['id', 'Descripción', 'Controlador' , 'Acción', 'Icono', 'Imagen', 'Orden'],
+            colModel: [
+                        {
+                            name: 'id',
+                            index: 'id',
+                            hidden: true
+                        },
+                        {
+                            name: 'descripcion',
+                            index: 'descripcion',
+                            width: 80,
+                            sorttype: 'string',
+                            searchoptions: { sopt: ['eq', 'bw', 'bn', 'cn', 'nc', 'ew', 'en'] },
+                            editable: true,
+                            editrules: { required: true }
+                        },
+                        {
+                            name: 'controllerName',
+                            index: 'controllerName',
+                            width: 50,
+                            searchoptions: { sopt: ['eq', 'bw', 'bn', 'cn', 'nc', 'ew', 'en'] },
+                            editable: true,
+                            editrules: { required: true },
+                            sorttype: 'string'
+                        },
+                        {
+                            name: 'actionName',
+                            index: 'actionName',
+                            width: 50,
+                            searchoptions: { sopt: ['eq', 'bw', 'bn', 'cn', 'nc', 'ew', 'en'] },
+                            editable: true,
+                            editrules: { required: true },
+                            sorttype: 'string'
+                        },
+                        {
+                            name: 'iconName',
+                            index: 'iconName',
+                            width: 50,
+                            editable: true,
+                            searchoptions: { sopt: ['eq', 'bw', 'bn', 'cn', 'nc', 'ew', 'en'] },
+                            sorttype: 'string',
+                            align: "center"
+                        },
+                        {
+                            name: 'iconName',
+                            index: 'iconName',
+                            width: 50,
+                            editable: false,
+                            searchoptions: { sopt: ['eq', 'bw', 'bn', 'cn', 'nc', 'ew', 'en'] },
+                            sorttype: 'string',
+                            formatter: function (cellvalue, options, rowobject) {
+                                return "<i class='" + cellvalue + " fa-lg'></i>";
+                            },
+                            align: "center"
+                        },
+                        {
+                            name: 'orden',
+                            index: 'orden',
+                            width: 20,
+                            searchoptions: { sopt: ['eq', 'bw', 'bn', 'cn', 'nc', 'ew', 'en'] },
+                            editable: true,
+                            sorttype: 'integer',
+                            editrules: { required: true },
+                            align: "center"
+                        }
+            ],
+            caption: "Opciones de menú"
+        };
+
+        jqGridStart('grdMenu', 'pgrMenu', 'menu/GetItemsMenu', config,
+                                          '@Url.Action("GuardarItemMenu", "Menu")',
+                                          '@Url.Action("ActualizarItemMenu", "Menu")',
+                                          '@Url.Action("EliminarItemMenu", "Menu")');
+    }
+
+    function gridExample() {
+        
+        jQuery("#grdExm").jqGrid({
+            datatype: "local",
+            height: 200,
+            colNames: ['Menu Id', 'Description', 'Action', 'Controller', 'Icon', 'Order'],
+            colModel: [{ name: 'id', index: 'id', width: 60, sorttype: "int" },
+            { name: 'descripcion', index: 'descripcion', width: 90, sorttype: "date" },
+            { name: 'actionName', index: 'actionName', width: 100, sortable: true },
+            { name: 'controllerName', index: 'controllerName', width: 80, align: "right", formatter:'link', classes: 'ui-state-error-text ui-state-error'},
+            { name: 'iconName', index: 'iconName', width: 80, align: "right" },
+            { name: 'orden', index: 'orden', width: 80, align: "right", sorttype: "float", formatter: 'number' }],
+            caption: "Manipulating Array Data",
+            footerrow: true,
+            rownumbers: true,
+            autowidth: true,
+            shrinkToFit: false,
+            gridComplete: function () {
+                var $grid = $('#grdExm');
+                var totalSum = $grid.jqGrid('getCol', 'orden', false, 'sum');
+                $grid.jqGrid('footerData', 'set', {
+                    'iconName': 'TOTALES: ',
+                    'orden': totalSum
+                });
+            }
+        });
+  /*      var mydata = [
+            { id: "1", invdate: "2007-10-01", name: "test", note: "note", amount: "200.00", tax: "10.00", total: "210.00" },
+            { id: "2", invdate: "2007-10-02", name: "test2", note: "note2", amount: "300.00", tax: "20.00", total: "320.00" },
+            { id: "3", invdate: "2007-09-01", name: "test3", note: "note3", amount: "400.00", tax: "30.00", total: "430.00" },
+            { id: "4", invdate: "2007-10-04", name: "test", note: "note", amount: "200.00", tax: "10.00", total: "210.00" },
+            { id: "5", invdate: "2007-10-05", name: "test2", note: "note2", amount: "300.00", tax: "20.00", total: "320.00" },
+            { id: "6", invdate: "2007-09-06", name: "test3", note: "note3", amount: "400.00", tax: "30.00", total: "430.00" },
+            { id: "7", invdate: "2007-10-04", name: "test", note: "note", amount: "200.00", tax: "10.00", total: "210.00" },
+            { id: "8", invdate: "2007-10-03", name: "test2", note: "note2", amount: "300.00", tax: "20.00", total: "320.00" },
+            { id: "9", invdate: "2007-09-01", name: "test3", note: "note3", amount: "400.00", tax: "30.00", total: "430.00" },
+            { id: "10", invdate: "2007-09-01", name: "test3", note: "note3", amount: "400.00", tax: "30.00", total: "430.00" },
+            { id: "11", invdate: "2007-09-01", name: "test3", note: "note3", amount: "400.00", tax: "30.00", total: "430.00" }];
+
+        for (var i = 0; i <= mydata.length; i++)
+            jQuery("#grdExm").jqGrid('addRowData', i + 1, mydata[i]);
+        */
+
+
+    //    for (var i = 0; i <= mData.length; i++)
+      //      jQuery("#grdExm").jqGrid('addRowData', i + 1, mData[i]);
+    }
+
+</script>
+
+@{ 
+    for (int i = 0; i < listExm.Count; i++)
+    {
+        <script>
+            $(document).ready(function () {
+                var id = '@listExm[i].id';
+                var des = '@listExm[i].descripcion';
+                var act = '@listExm[i].actionName';
+                var cont = '@listExm[i].controllerName';
+                var icon = '@listExm[i].iconName';
+                var ordr = '@listExm[i].orden';
+
+                var myData = [{
+                    id: id, descripcion: des,
+                    actionName: act, controllerName: cont,
+                    iconName: icon, orden: ordr
+                }];
+
+                jQuery("#grdExm").jqGrid('addRowData', @(i + 1), myData[0]);
+            });
+        </script>
+    }
+
+    if (esVendedor)
+    {
+        <script>
+            $(document).ready(function () {
+                jQuery("#grdExm").jqGrid('hideCol', ["iconName", "orden"]);
+            });
+        </script>
+    }
+}
+
+                <ol class="breadcrumb">
+                    <li><a href="~/Home">Inicio</a></li>
+                    <li class="active">Menú del sistema</li>
+                </ol>
+
+                <div class="row">
+
+                    <div class="col-md-12">
+                        <section class="panel">
+                            <header class="panel-heading" style="height:48px">
+                                Opciones de menú
+            </header>
+
+                            <div class="panel-body">
+                                <div id="products" class="table-responsive">
+                                    <table id="grdMenu"></table>
+                                    <div id="pgrMenu"></div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8">
+                                    </div>
+                                    <div class="col-xs-8 col-md-4">
+                                        <a href="http://fontawesome.io/icons/" style="float:right; margin-right:10px; margin-top: 8px" target="_blank"> -> Ver íconos disponibles</a>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </section>
+                    </div>
+
+                    <div class="col-md-12">
+                        <section class="panel">
+                            <header class="panel-heading" style="height:48px">
+                                EJEMPLO LISTA JQUERY GRID
+            </header>
+
+                            <div class="panel-body">
+                                <div id="example" class="table-responsive">
+                                    <table id="grdExm"></table>
+                                    <div id="pgrExm"></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>

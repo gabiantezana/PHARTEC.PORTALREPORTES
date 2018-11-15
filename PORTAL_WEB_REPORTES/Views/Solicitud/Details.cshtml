@@ -1,0 +1,379 @@
+﻿@model Model.Solicitud
+
+@{
+    
+    ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+
+    if (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA)){
+        ViewBag.Editar = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.EditAction = "btnSolEdit";
+    }else if(Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.PROCESANDO) &&
+            Session[Casuarinas.Helpers.Constantes.SESSION_FROM_PENDENTS] != null)
+    {
+        ViewBag.Editar = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.EditAction = "btnSolEdit";
+    }
+
+    if (Session[Casuarinas.Helpers.Constantes.SESSION_FROM_PENDENTS] != null)
+    {
+        ViewBag.BackAction = "frmPenB";
+        var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Pendientes");
+        TempData["clicked"] = permisos.Menu_id;
+    }
+    else{
+        ViewBag.BackAction = "frmSolB";
+        var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Solicitud");
+        TempData["clicked"] = permisos.Menu_id;
+    }
+    
+    ViewBag.Title = "MS" + Model.id.ToString("D9");
+}
+
+<script>
+    $(function () {
+
+        $("#btnSolAprobar").click(function () {
+            bootbox.prompt("Aprobar Solicitud", function (result) {
+                var ids = [];
+                ids[0] = '@Model.id';
+                if (result != null) {
+
+                    var dialog = bootbox.dialog({
+                        message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Procesando...</div>',
+                        closeButton: false
+                    });
+
+                    $.ajax({
+                        type: 'POST',
+                        traditional: true,
+                        url: '@(Url.Content("~/"))' + 'pendientes/AprobarSolicitud',
+                        data: { ids: ids, comentario : result},
+                        success: function (r) {
+
+                            dialog.modal('hide');
+                            if (r.respuesta) {
+                                window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                            } else {
+                                notificacion(1, r.error);
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            dialog.modal('hide');
+                            notificacion(1, errorThrown);
+                        }
+                    });
+                }
+            });
+        });
+
+        $("#btnSolRechazar").click(function () {
+
+            bootbox.prompt("Rechazar Solicitud", function (result) {
+                var ids = [];
+                ids[0] = '@Model.id';
+                if (result != null) {
+
+                    var dialog = bootbox.dialog({
+                        message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Procesando...</div>',
+                        closeButton: false
+                    });
+
+                    $.ajax({
+                        type: 'POST',
+                        traditional: true,
+                        url: '@(Url.Content("~/"))' + '/pendientes/RechazarSolicitud',
+                        data: { ids: ids, comentario: result },
+                        success: function (r) {
+
+                            dialog.modal('hide');
+                            if (r.respuesta) {
+                                window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                            } else {
+                                notificacion(1, r.error);
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            dialog.modal('hide');
+                            notificacion(1, errorThrown);
+                        }
+                    });
+                }
+            });
+        });
+
+
+        $('#btnVerOrg').click(function () {
+            $('#modalOriginal').modal('show');
+        });
+
+    });
+</script>
+
+<style type="text/css">
+
+    dl dt
+    {
+        padding-bottom: 5px;
+    }
+
+</style>
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    @if (Session[Casuarinas.Helpers.Constantes.SESSION_FROM_PENDENTS] != null){
+        <li><a href="~/Pendientes"><i class="fa fa-file-text ibread"></i>Solicitudes Pendientes</a></li>
+    }else{
+        <li><a href="~/Solicitud"><i class="fa fa-file-text-o ibread"></i>Mis solicitudes</a></li>
+    }
+    <li class="active"><i class="fa fa-file ibread"></i>@("MS" + Model.id.ToString("D9"))</li>
+</ol>
+
+@if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE_APPROVE] != null)
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            notificacion(0, 'Solicitud(es) aprobada(s) con éxito.');
+        });
+    </script>
+}
+else if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE_DENIED] != null)
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            notificacion(0, 'Solicitud(es) rechazada(s) con éxito.');
+        });
+    </script>
+}
+
+@if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            notificacion(0, "Registro actualizado con éxito");
+        });
+    </script>
+}
+
+<div class="panel panel-default" id="parentIP">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentIP" href="#divIP"><i class="fa fa-file" aria-hidden="true" style="margin-right:5px"></i> Solicitud de requerimiento</a>
+        </div>
+        <div id="divIP" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="form-group" style="margin-top:15px">
+                    <div class="col-md-1"></div>
+                    <dl class="dl-horizontal col-md-5">
+                        <dt>Identificador: </dt>        <dd>@Model.id</dd>
+                        <dt>Código solicitante: </dt>   <dd>@Model.Usuario_id</dd>
+                        <dt>Fecha de registro: </dt>    <dd>@(string.Format("{0:yyyy-MM-dd}",Model.fechaRegistro))</dd>
+                        <dt>Fecha necesaria: </dt>      <dd>@(string.Format("{0:yyyy-MM-dd}",Model.fechaNecesaria))</dd>
+                        <dt>Valido hasta: </dt>         <dd>@(string.Format("{0:yyyy-MM-dd}", Model.fechaVencimiento)) </dd>
+                    </dl>
+                    <dl class="dl-horizontal col-md-5">
+                        <dt>Estado: </dt>               <dd>@(Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA) ? "Pendiente" :
+                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.PROCESANDO) ? "Procesando": 
+                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.APROBADA)? "Aprobada":
+                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.RECHAZADA)? "Rechazada":
+                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.RegistradaEnSAP)? "En SAP (Solicitud)": 
+                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.OrdenDeCompra)? "En SAP (Orden Compra)": 
+                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.IngresoAlmacen)? "En SAP (Almacén)": ""))))))) 
+                                                             <i class="fa fa-@(Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA) ? "refresh fa-spin": 
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.APROBADA)? "check-square-o":
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.RECHAZADA)? "thumbs-down":
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.RegistradaEnSAP)? "download": 
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.OrdenDeCompra)? "shopping-cart": 
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.IngresoAlmacen)? "thumbs-up": "")))))) fa-1x fa-elem" 
+                                                                style="margin-left:5px;color:@(Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA) ? "#F42A04": 
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.APROBADA)? "#5cb85c":
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.RECHAZADA)? "#F42A04":
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.RegistradaEnSAP)? "#5bc0de": 
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.OrdenDeCompra)? "#428bca": 
+                                                                              (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.IngresoAlmacen)? "#5cb85c": "#FFF"))))))"></i>
+                                                        </dd>
+                        <dt>Nombre solicitante: </dt>   <dd>@Model.Usuario_nombre</dd>
+                        <dt>Correo: </dt>               <dd>@Model.Usuario.correo</dd>
+                        <dt>Empresa: </dt>              <dd>@Model.Empresa_descripcion</dd>
+                        <dt>Centro de costo: </dt>      <dd>@Model.CentroCosto_descripcion</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+</div>
+
+<div class="panel panel-default" id="parentDet">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentDet" href="#divDet"><i class="fa fa-table" aria-hidden="true" style="margin-right:5px"></i> Contenido</a>
+        </div>
+        <div id="divDet" class="panel-collapse collapse in">
+            <div class="panel-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código SAP</th>
+                            <th>Artículo/Servicio</th>
+                            <th>Fecha necesaria</th>
+                            <th>Cantidad</th>
+                            <th>Comentario</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model.SolicitudDetalle)
+                        {
+                            <tr>
+                                <td>@item.Articulo_codigosap</td>
+                                <td>@item.descripcion</td>
+                                <td>@(string.Format("{0:yyyy-MM-dd}",item.fechaNecesaria))</td>
+                                <td>@item.cantidad</td>
+                                <td>@item.comentario</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+</div>
+
+<div class="panel panel-default" id="parentNiv">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentNiv" href="#divNiv"><i class="fa fa-bars" aria-hidden="true" style="margin-right:5px"></i> Historial de aprobación</a>
+        </div>
+        <div id="divNiv" class="panel-collapse collapse in">
+            <div class="panel-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Prioridad</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Observación</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model.SolicitudEstado)
+                        {
+                            <tr>
+                                <td>@item.Usuario_nombre</td>
+                                <td><span class="badge">@item.prioridad</span></td>
+                                <td>@item.fechaActualizacion</td>
+                                <td>
+                                    <span class="label label-@(item.accion.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA)? "success" :
+                                                              (item.accion.Equals(Casuarinas.Helpers.EstadoSolicitud.APROBADA) ? "primary" : "danger"))">
+                                    <label style="font-size:small"> @(item.accion.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA)? "Pendiente" :
+                                             (item.accion.Equals(Casuarinas.Helpers.EstadoSolicitud.APROBADA) ? "Aprobada" : "Rechazada")) 
+                                    </label>
+                                    </span>
+                                </td>
+                                <td>@item.observacion</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+</div>
+
+@if (Session[Casuarinas.Helpers.Constantes.SESSION_FROM_PENDENTS] != null && (Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.INICIAL_REGISTRADA) || Model.estado.Equals(Casuarinas.Helpers.EstadoSolicitud.PROCESANDO)))
+{
+    <div class="row">
+        <div class="form-horizontal">
+            <div class="col-sm-2"></div>
+                <button id="btnSolAprobar" type="button" class="btn btn-primary btn-lg" style="width:300px"><i class="fa fa-check ibread"></i>Aprobar</button>
+            <div class="col-sm-4">
+                <button id="btnSolRechazar" type="button" class="btn btn-danger btn-lg" style="width:300px"><i class="fa fa-times ibread"></i>Rechazar</button>
+            </div>
+        </div>
+    </div>
+}else{
+    if (Model.CreadoPor != Model.ActualizadoPor)
+    {
+        <div class="row">
+            <div class="form-horizontal">
+                <div class="col-sm-4">
+                    <button id="btnVerOrg" type="button" class="btn btn-primary btn-lg" style="width:300px"><i class="fa fa-map-o ibread"></i>Ver Original</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+<button type="button" id="frmSolB" style="display:none" onclick="location.href='@Url.Action("Index", "Solicitud")'">Volver</button>
+<button type="button" id="frmPenB" style="display:none" onclick="location.href='@Url.Action("Index", "Pendientes")'">Volver</button>
+<button type="button" id="btnSolEdit" style="display:none" onclick="location.href='@Url.Action("Form","Solicitud", new { id = Model.id })'">Editar</button>
+
+
+
+<!-- Modal Ver Original-->
+<div class="modal fade" id="modalOriginal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Solicitud original</h4>
+      </div>
+      <div class="modal-body">
+         
+         <form id="modal-form" class="form-horizontal" style="margin-right:10px; margin-top:10px">
+            
+            <div class="panel panel-primary">
+            <div class="panel-heading">
+                <i class="fa fa-bars" aria-hidden="true" style="margin-right:5px"></i> Datos básicos 
+            </div>
+            <div class="panel-body table-responsive">
+                <br />
+                <div class="col-md-2"></div>
+                <dl class="dl-horizontal col-md-5">
+                    <dt>Identificador: </dt>        <dd>@Model.id</dd>
+                    <dt>Nombre solicitante: </dt>   <dd>@Model.Usuario_nombre</dd>
+                    <dt>Fecha de registro: </dt>    <dd>@(string.Format("{0:yyyy-MM-dd}",Model.fechaRegistro))</dd>
+                    <dt>Fecha necesaria: </dt>      <dd>@(string.Format("{0:yyyy-MM-dd}",Model.fechaNecesaria))</dd>
+                    <dt>Valido hasta: </dt>         <dd>@(string.Format("{0:yyyy-MM-dd}", Model.fechaVencimiento)) </dd>
+                </dl>
+            </div>
+            </div>
+             <br />
+            <div class="panel panel-primary">
+            <div class="panel-heading">
+                <i class="fa fa-bars" aria-hidden="true" style="margin-right:5px"></i> Contenido
+            </div>
+
+             <div class="panel-body table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Código SAP</th>
+                            <th>Artículo/Servicio</th>
+                            <th>F. necesaria</th>
+                            <th>Cantidad</th>
+                            <th>Comentario</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if(ViewBag.Historico != null){
+                            foreach (var item in ViewBag.Historico)
+                            {
+                                <tr>
+                                    <td>@item.Articulo_codigosap</td>
+                                    <td>@item.descripcion</td>
+                                    <td>@(string.Format("{0:yyyy-MM-dd}",item.fechaNecesaria))</td>
+                                    <td>@item.cantidad</td>
+                                    <td>@item.comentario</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        
+         </form> 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+﻿@*@model List<Model.OrdenCompra>*@
+@{
+    var data = ViewBag.resultado;
+    WebGrid wg = new WebGrid(data, rowsPerPage: 10);
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Rol");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.exporta != null && permisos.exporta == true)
+    {
+        ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.ExportarAction = "frmProdExp";
+    }
+
+
+    ViewBag.Title = "Producto";
+}
+
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-cog" style="margin-right:4px"></i>Orden de Compras</li>
+</ol>
+
+<div class="row">
+
+    <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Orden de compra</b>
+            </header>
+
+            <div class="panel-body">
+
+                @using (@Html.BeginForm("Index", "OrdenCompra", FormMethod.Get, new { @class = "form-search" }))
+                {
+                    <div class="row" style="margin-bottom:10px">
+                        <div class="col-xs-18 col-md-4">
+                            <div class="input-group">
+                                @Html.TextBox("search", null, new { @class = "form-control col-xs-4", @placeholder = "Buscar orden de compra" })
+                                <span class="input-group-btn">
+                                    <button type="submit" class="btn btn-primary">Buscar</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+
+
+                <div class="table-responsive">
+                    @wg.GetHtml(
+                            tableStyle: "table table-bordered table-hover dataTable no-footer dtr-inline",
+                            nextText: "Siguiente >",
+                            previousText: "< Anterior"
+                            //     columns: new[]{
+
+                       //         wg.Column("BatchNumms", header:"BatchNumms"),
+                            //         wg.Column("CardCodems", header: "CardCodems"),
+                            //         wg.Column("CardNamems", header: "CardNamems")
+
+
+                       //}
+                         )
+                </div>
+
+
+
+            </div>
+
+        </section>
+    </div>
+</div>

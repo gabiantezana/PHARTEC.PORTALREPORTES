@@ -1,0 +1,106 @@
+﻿@model List<Model.Usuario>
+
+@{
+    ViewBag.Title = "Usuarios";
+    WebGrid wg = new WebGrid(Model, rowsPerPage: 10);
+    
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Usuario");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.registra != null && permisos.registra == true)
+    {
+        ViewBag.New = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.NewAction = "frmUsrNew";
+    }
+
+    ViewBag.Importar = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.ImportarAction = "frmUsrImp";
+    
+    if(ViewData["alert"] != null){
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro creado con éxito");
+            });
+        </script>
+    }
+}
+
+<script>
+
+    $(function () {
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+    });
+
+</script>
+
+<ol class="breadcrumb">
+   <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-users ibread"></i>Usuarios</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Usuarios</b> 
+            </header>
+            
+            <div class="panel-body">
+
+                @using (@Html.BeginForm("Index", "Usuario", FormMethod.Get, new { @class = "form-search" }))
+                {
+                    <div class="row" style="margin-bottom:10px">
+                        <div class="col-xs-6 col-md-4">
+                            <div class="input-group">
+                                @Html.TextBox("search", null, new { @class = "form-control col-xs-4", @placeholder = "Buscar por nombre o usuario web..." })
+                                <span class="input-group-btn">
+                                    <button type="submit" class="btn btn-primary">Buscar</button>
+                                </span>
+                                </div>
+                        </div>
+                        <div class="col-xs-6 col-md-8">
+                            <a class="btn btn-primary" style="float: right; display:none" href="~/Usuario/Form">Nuevo registro</a>
+                        </div>
+                    </div>
+                }
+
+                <div class="table-responsive">
+                    @wg.GetHtml(
+                        tableStyle: "table table-bordered table-hover dataTable no-footer dtr-inline",
+                        nextText: "Siguiente >",
+                        previousText: "< Anterior",
+                        columns: new[]{
+                            wg.Column("id",header:"ID", format: (item) => "U" + item.id.ToString("D9"), style: "texto-centrado"),
+                            wg.Column("Rol.descripcion", header:"Rol"),
+                            wg.Column("nombre", header: "Nombres"),
+                            wg.Column("cuentaWeb", header: "Usuario Web", style: "texto-centrado"),
+                            wg.Column("codigo_sap",header:"Usuario vendedor Sap", style:"texto-centrado"),
+                            wg.Column("fechaRegistro", header:"Fecha de registro", canSort:false, format : (item) => string.Format("{0:yyyy-MM-dd}", item.fechaRegistro), style: "texto-centrado"),
+                            wg.Column("estado", header:"Estado", format: (item) => item.estado.Equals("A") ? "Activo" : "Inactivo", style: "texto-centrado"),
+                            wg.Column(null, null,format: 
+                            @<text>
+                                    <a class="btn btn-primary" style="line-height:13px" href="@Url.Action("Details", "Usuario", new { id= item.id } )"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                                    @if (permisos.modifica != null && permisos.modifica == true)
+                                    {
+                                        <a class="btn btn-default" style="line-height:13px" href="@Url.Action("Form", "Usuario", new { id=item.id })"><i class="fa fa-pencil"></i></a>
+                                    }
+                                    @if (permisos.elimina != null && permisos.elimina == true)
+                                    {
+                                        <a class="btn btn-danger" style="line-height:13px" href="@Url.Action("Eliminar", "Usuario", new { id=item.id })" onclick="return confirm('¿Está seguro de eliminar este registro?');"><i class="fa fa-trash-o"></i></a>
+                                    }
+                            </text>, style: "texto-centrado")
+                        }
+                    )
+                </div>
+
+            </div>
+        </section>
+    </div>
+    
+</div>
+
+<button type="button" id="frmUsrNew" style="display:none" onclick="location.href='@Url.Action("Form", "Usuario")'">Nuevo</button>
+<button type="button" id="frmUsrImp" style="display:none" onclick="location.href='@Url.Action("Import", "Usuario")'">Importar</button>

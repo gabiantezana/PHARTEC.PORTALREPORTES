@@ -1,0 +1,351 @@
+﻿@{
+	ViewBag.Title = "Ventas por Vendedor";
+	var datalista = ViewBag.resultado;
+	WebGrid wg = new WebGrid(Model, rowsPerPage: 1000);
+	var esVendedor = ViewBag.esVendedor;
+	var totales = ViewBag.totales;
+	var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("VentasVendedor");
+	TempData["clicked"] = permisos.Menu_id;
+
+	if (permisos.exporta != null && permisos.exporta == true)
+	{
+		ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+		ViewBag.ExportarAction = "frmProdExp";
+	}
+
+	var filtros = ViewBag.filtros;
+}
+
+
+<link href="~/Assets/css/tableStyle.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript">
+    $(function () {
+        var desde = $("#desde").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            hasta.datepicker("option", "minDate", getDate(this));
+        }), hasta = $("#hasta").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            desde.datepicker("option", "maxDate", getDate(this));
+        });
+
+        function getDate(element) {
+            var date;
+            try {
+                date = $.datepicker.parseDate("yy-mm-dd", element.value);
+            } catch (error) {
+                date = null;
+            }
+
+            return date;
+        }
+		var current_date = new Date();
+		hasta.datepicker('setDate', $('#_hasta').val() != null ? $('#_hasta').val() : current_date);
+		var date = new Date();
+		var primerDia = new Date(date.getFullYear(), date.getMonth(), 1);
+
+		desde.datepicker('setDate', $('#_desde').val() != null ? $('#_desde').val() : primerDia);    
+
+
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+
+         // para ir al Form
+        $(".hrefAbrirForm").click(function (event) {
+            event.preventDefault();
+
+
+            var url = '@Url.Action("Form", "VentasVendedor", new {
+					  sucursal = "SUCURSAL" ,
+					  slpCode = "SLP_CODE",
+					  moneda = "MONEDA",
+					  desde = "DESDE",
+					  hasta = "HASTA",
+					  divisionx = "DIVISIONX",
+					  subdivisionx = "SUBDIVISIONX",
+					  lineax = "LINEAX",
+
+					  lineaxLinea = "LINEAX_LINEA",
+					  sucursalLinea = "SUCURSAL_LINEA",
+					  subdivisionxLinea = "SUBDIVISIONX_LINEA",
+					  divisionxLinea = "DIVISIONX_LINEA",
+				  })';
+
+			
+			url = url.replace("SUCURSAL", $('#sucursal').val());
+			url = url.replace("amp;", "");
+			
+			url = url.replace("MONEDA", $('#moneda').val());
+            url = url.replace("amp;", "");
+            url = url.replace("DESDE", $('#desde').val());
+            url = url.replace("amp;", "");
+            url = url.replace("HASTA", $('#hasta').val());
+            url = url.replace("amp;", "");
+            url = url.replace("DIVISIONX", $('#divisionx').val());
+            url = url.replace("amp;", "");
+            url = url.replace("SUBDIVISIONX", $('#subdivisionx').val());
+            url = url.replace("amp;", "");
+            url = url.replace("LINEAX", $('#lineax').val());
+            url = url.replace("amp;", "");
+
+
+			url = url.replace("SLP_CODE", $(this).data("id"));
+			url = url.replace("amp;", "");
+			url = url.replace("LINEAX_LINEA", $(this).data("idlin"));
+			url = url.replace("amp;", "");
+			url = url.replace("SUCURSAL_LINEA", $(this).data("idsuc"));
+			url = url.replace("amp;", "");
+			url = url.replace("SUBDIVISIONX_LINEA", $(this).data("idsub"));
+			url = url.replace("amp;", "");
+			url = url.replace("DIVISIONX_LINEA", $(this).data("iddiv"));
+			url = url.replace("amp;", "");
+
+
+            window.location.href = url;
+
+		});
+		
+        //////SORT TABLE
+
+        function sortTable(f, n) {
+            var rows = $('#tbVentas tbody  tr').get();
+
+            rows.sort(function (a, b) {
+
+                var A = getVal(a);
+                var B = getVal(b);
+                
+                if (A < B) {
+                    return -1 * f;
+                }
+                if (A > B) {
+                    return 1 * f;
+                }
+                return 0;
+            });
+
+            function getVal(elm) {
+                var v = $(elm).children('td').eq(n).text().toUpperCase().replace(',','').replace('%','');
+                if ($.isNumeric(v)) {
+                    v = parseInt(v, 10);
+                }
+                return v;
+            }
+
+            $.each(rows, function (index, row) {
+                $('#tbVentas').children('tbody').append(row);
+            });
+        }
+        var f_sl = 1;
+        var f_nm = 1;
+        $("#cod").click(function () {
+            f_sl *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_sl, n);
+        });
+        $("#nom").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+        $("#idx").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        $("#suc").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        $("#can").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        $("#tov").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        $("#toc").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        $("#ves").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        $("#mar").click(function () {
+            f_nm *= -1;
+            var n = $(this).prevAll().length;
+            sortTable(f_nm, n);
+        });
+
+        //////SORT TABLE
+    });
+</script>
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-file-text-o ibread"></i>Ventas por Vendedor</li>
+</ol>
+
+<div class="col-md-12">
+    <section class="panel">
+        <header class="panel-heading" style="height:48px">
+            Ventas por Vendedor
+        </header>
+
+        @using (@Html.BeginForm("Index", "VentasVendedor", FormMethod.Get, new { @class = "form-horizontal" }))
+        {
+            <div class="form-group" style="margin:20px;margin-bottom:30px">
+                <label class="control-label col-sm-1" for="sucursal">Sucursal</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("sucursal", null, new { @class = "form-control", @title = "Seleccione..." })
+
+                </div>
+                <label class="control-label col-sm-1" for="desde">Desde:</label>
+                <div class="col-sm-2">
+                    @Html.TextBox("desde", null, new { @class = "form-control col-xs-4" })
+                </div>
+                <label class="control-label col-sm-1" for="hasta">Hasta:</label>
+                <div class="col-sm-2">
+                    @Html.TextBox("hasta", null, new { @class = "form-control col-xs-4" })
+                </div>
+                <label class="control-label col-sm-1" for="moneda">Moneda:</label>
+
+
+                <div class="col-sm-2">
+                    @Html.DropDownList("moneda", null, new { @class = "form-control", @title = "Seleccione..." })
+
+                </div>
+            </div>
+
+            <div class="form-group" style="margin:20px;margin-bottom:30px">
+                <label class="control-label col-sm-1" for="divisionx">División:</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("divisionx", null, new { @class = "form-control col-xs-4", @title = "Seleccione..." })
+                </div>
+                <label class="control-label col-sm-1" for="subdivisionx">Subdivisión:</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("subdivisionx", null, new { @class = "form-control col-xs-4" })
+                </div>
+                <label class="control-label col-sm-1" for="lineax">Línea:</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("lineax", null, new { @class = "form-control col-xs-4" })
+                </div>
+
+                <div class="col-sm-2">
+                    <button id="btnSearch" style="width:120px" type="submit" class="search btn btn-primary">Ejecutar</button>
+                </div>
+            </div>
+
+        }
+
+
+        <div class="panel-body table-responsive">
+
+            <div>
+
+                @if (filtros != null)
+                {
+                    <input type="hidden" id="_hasta" value="@filtros.Hasta" />
+                    <input type="hidden" id="_desde" value="@filtros.Desde" />
+                }
+            </div>
+            <div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+                <div class="tableview tableview-has-footer">
+                    <div class="tableview-holder">
+                        <table id="tbVentas" style="width: 920px">
+                            <thead>
+                                <tr>
+                                    <td id="idx" caption="#"></td>
+                                    <td id="cod" class="texto-centrado" caption="Código Vendedor"></td>
+                                    <td id="nom" class="texto-centrado" caption="Nombre Vendedor"></td>
+                                    <td id="suc" class="texto-centrado" caption="Sucursal"></td>
+                                    <td id="can" class="texto-centrado" caption="Cantidad"></td>
+                                    <td id="tov" class="texto-centrado" caption="Total Venta"></td>
+                                    @if (!esVendedor)
+                                    {
+                                        <td id="toc" class="texto-centrado" caption="Total Costo"></td>
+                                        <td id="mar" class="texto-centrado" caption="Margen"></td>
+                                        <td id="ves" class="texto-centrado" caption="Venta estandarizada"></td>
+                                    }
+                                </tr>
+                            </thead>
+
+                            @if (datalista != null)
+                            {
+                                <tbody>
+                                    @{int i = 1;}
+                                    @foreach (var item in datalista)
+                                    {
+                                        <tr>
+                                            <td>@i</td>
+                                            <td class="texto-centrado">@item.SlpCode</td>
+                                            <td class="texto-centrado">
+                                                <a class="hrefAbrirForm" href="" data-id="@item.SlpCode"
+                                                   data-iddiv="@item.OcrCode" data-idsub="@item.OcrCode2"
+                                                   data-idlin="@item.OcrCode3" data-idsuc="@item.Sucursal">
+                                                    @item.SlpName
+                                                </a>
+                                            </td>
+                                            <td class="texto-centrado">@item.Sucursal</td>
+                                            <td class="texto-centrado">@item.Quantity </td>
+                                            <td>@item.TotalVenta.ToString("N2")</td>
+
+                                            @if (!esVendedor)
+                                            {
+                                                <td>@item.TotalCosto.ToString("N2")</td>
+                                                <td>@item.Margen.ToString("N2")%</td>
+                                                <td>@item.MargenEstandarizado.ToString("N2")</td>
+                                            }
+
+                                        </tr>
+                                        i++;
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="5" class="texto-centrado"><div class="fixed">Totales</div></td>
+                                        <td class="texto-centrado"><div class="fixed">@totales.TotalVentas.ToString("N2")</div></td>
+
+                                        @if (!esVendedor)
+                                        {
+                                            <td class="texto-centrado"><div class="fixed">@totales.TotalCompras.ToString("N2")</div></td>
+                                            <td class="texto-centrado"><div class="fixed">@totales.TotalMargen.ToString("N2")% </div></td>
+                                            <td class="texto-centrado"><div class="fixed">@totales.TotalMargenEstandarizado.ToString("N2")</div></td>
+                                        }
+
+                                    </tr>
+
+                                </tfoot>
+                             }
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </div>
+</section>
+
+</div>
+
+<button type="button" id="frmProdExp" style="display:none"
+        onclick="location.href='@Url.Action("Exportar", "VentasVendedor", @esVendedor)'">
+    Nuevo
+</button>

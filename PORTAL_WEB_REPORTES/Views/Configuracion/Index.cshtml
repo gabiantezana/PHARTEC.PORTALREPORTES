@@ -1,0 +1,177 @@
+﻿@model Model.Configuracion
+
+@{
+    ViewBag.Title = "Configuración";
+    
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Configuracion");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.modifica != null && permisos.modifica == true)
+    {
+        ViewBag.Save = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.SaveAction = "btnCfgSave";
+    }
+}
+
+<script>
+
+    $(function () {
+        $("#frm-cfg").submit(function () {
+            var form = $(this), counter = 0;
+
+            if (form.validate()) {
+                form.ajaxSubmit({
+                    type: 'POST',
+                    url: form.attr('action'),
+                    success: function (r) {
+                        if (r.respuesta) {
+                            window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                        } else {
+                            notificacion(1, r.error);
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        notificacion(1, errorThrown);
+                    }
+                });
+            }
+
+            return false;
+        });
+    });
+    
+</script>
+
+<style>
+    input[name="logo_url"] {
+            width: 250px;
+        }
+</style>
+
+<ol class="breadcrumb">
+   <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-cog ibread"></i>Configuración</li>
+</ol>
+
+
+@using (Html.BeginForm("Guardar", "Configuracion", FormMethod.Post, new { id = "frm-cfg", @class = "form-horizontal" }))
+{
+    if (ViewData[Casuarinas.Helpers.Constantes.VIEWDATA_ALERT] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Preferencias guardadas con éxito.");
+            });
+        </script>
+    }
+
+    @Html.HiddenFor(c => c.id)
+    <div class="col-lg-6">
+        <div class="row">
+            <div class="col-md-12">
+                <section class="panel">
+                    <header class="panel-heading">
+                        Configuración general
+                    </header>
+                
+                    <div class="modal-body">
+                        <div class="form-horizontal">
+                          <div class="form-group">
+                            <label class="control-label col-sm-5" for="empDes">Descripción:</label>
+                            <div class="col-sm-6">
+                                @Html.TextBoxFor(c => c.nombre_empresa, new { @class = "form-control" })
+                            </div>
+                          </div>
+                          <div class="form-group" style="display:none">
+                            <label class="control-label col-sm-5" for="logo_url">Logo:</label>
+                            <div class="col-sm-6">
+                                @Html.TextBoxFor(c => c.logo_url, new { @type = "file" })
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="control-label col-sm-5">Versión:</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" disabled="disabled" value="1.0.0.1"/>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="control-label col-sm-5" for="logo_url">Contacto:</label>
+                            <div class="col-sm-6">
+                                <a class="form-control" disabled="disabled" target="_blank" href="http://www.seidor.com.pe">www.seidor.com.pe</a>
+                            </div>
+                          </div>
+                          <div class="form-group" style="display:none">
+                            <label class="control-label col-sm-5" for="empEmail">Enviar email:</label>
+                            <div class="col-sm-7">
+                                @Html.EditorFor(c => c.enviar_correos)
+                            </div>
+                          </div>
+                          <div class="form-group" style="display:none">
+                            <label class="control-label col-sm-5" for="empMsgs">Mensajes instantáneos:</label>
+                            <div class="col-sm-7">
+                                @Html.EditorFor(c => c.push_notification)
+                            </div>
+                          </div>
+
+                        </div> 
+                    </div>
+                 </section>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+            <section class="panel">
+            <header class="panel-heading">
+                Servidor de correo
+            </header>
+                
+            <div class="modal-body">
+                <div class="form-horizontal">
+                    <div class="form-group">
+                    <label class="control-label col-sm-5" for="emailHost">Host:</label>
+                    <div class="col-sm-6">
+                        @Html.TextBoxFor(c => c.servidor_correo, new { @class = "form-control" })
+                    </div>
+                    </div>
+                    <div class="form-group">
+                    <label class="control-label col-sm-5" for="emailPort">Puerto:</label>
+                    <div class="col-sm-6">
+                        @Html.TextBoxFor(c => c.puerto, new { @class = "form-control", @type = "number" })
+                    </div>
+                    </div>
+                    <div class="form-group">
+                    <label class="control-label col-sm-5" for="emailUser">Usuario:</label>
+                    <div class="col-sm-6">
+                        @Html.TextBoxFor(c => c.usuario, new { @class = "form-control" })
+                    </div>
+                    </div>
+                    <div class="form-group">
+                    <label class="control-label col-sm-5" for="emailPass">Password:</label>
+                    <div class="col-sm-6">
+                        @Html.TextBoxFor(c => c.password, new { @class = "form-control", @type = "password" })
+                    </div>
+                    </div>
+
+                </div> 
+            </div>
+            </section>
+    </div>
+    
+    @*
+    <div class="alert alert-danger" role="alert">
+      <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+      <span class="sr-only">Error:</span>
+      Enter a valid email address
+    </div>*@
+
+
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <button id="btnCfgSave" type="submit" class="btn btn-primary btn-lg" style="width:300px;display:none">Guardar</button>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+}

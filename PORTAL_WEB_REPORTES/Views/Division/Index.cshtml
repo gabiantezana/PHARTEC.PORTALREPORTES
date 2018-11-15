@@ -1,0 +1,230 @@
+﻿@{
+    ViewBag.Title = "Divisiones";
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Division");
+   TempData["clicked"] = permisos.Menu_id;
+    if (permisos.registra != null && permisos.registra == true)
+    {
+        ViewBag.New = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.NewAction = "frmDivNew";
+    }
+    
+    if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro guardado con éxito");
+            });
+        </script>
+    }
+}
+
+<script type="text/javascript">
+    $(document).on('click', 'button.EditButton', function () {
+        var myElem = this,
+                    DivId,
+                    DivDes,
+                    DivCodSap;
+
+        //Capturar los valores de la fila
+        $($(myElem).closest('tr')).each(function () {
+            DivId = $(this).find(".id").html();
+            DivDes = $(this).find(".desc").html();
+            DivCodSap = $(this).find(".codSap").html();
+        });
+
+        //Establecer los valores capturados en los elementos del Modal
+        $(".modal-body #DivId").val(DivId);
+        $(".modal-body #DivDes").val(DivDes);
+        $(".modal-body #DivCodSap").val(DivCodSap);
+
+        //Mostrar dialog
+        $('#modalDivision').find("#myModalLabel").html('Editar - ' + DivDes);
+        $("#modalDivision").modal('show');
+        return false;
+    });
+
+    $(function () {
+        $("#frmDivNew").on('click', function () {
+            $('.modal-body #modal-form')[0].reset();
+            $('#modalDivision').modal('show');
+        });
+
+        //Agregar o Editar
+        $("#btnModalSave").on('click', function () {
+            var DivId = $(".modal-body #DivId"),
+                DivDes = $(".modal-body #DivDes"),
+                DivCodSap = $(".modal-body #DivCodSap");
+            if (DivDes.val() === '') {
+                notificacion(1, "Debe ingresar una descripción");
+                return false;
+            }
+            else if (DivCodSap.val() === '') {
+                notificacion(1, "Deber ingresar el código SAP")
+                return false;
+            }
+
+            if (DivId.val() === '') {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Agregando División...</div>',
+                    closeButton: false
+                });
+            }
+            else {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Modificando División...</div>',
+                    closeButton: false
+                });
+            }
+
+           $.ajax({
+                type: 'POST',
+                url: '@(Url.Content("~/"))' + 'division/Guardar',
+                data: {
+                    DivisionId: DivId.val(),
+                    DivisionDes: DivDes.val(),
+                    DivisionCodSap: DivCodSap.val()
+                },
+             success: function (r) {
+                    $('#modalDivision').modal('hide');
+                    dialog.modal('hide');
+                    if (r.respuesta) {
+                        window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                    } else {
+                        if (r.error != "") {
+                            notificacion(1, r.error);
+                        }
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#modalDivision').modal('hide');
+                    dialog.modal('hide');
+                    notificacion(1, errorThrown);
+                }
+            });
+
+        });
+
+
+    });
+</script>
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-cog" style="margin-right:4px"></i>Divisiones</li>
+    <li></li>
+</ol>
+
+<!--Tabla de listado-->
+<div class="row">
+    <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Divisiones</b>
+            </header>
+            <div class="panel-body table-responsive">
+                <div class="col-md-1"></div>
+                <div class="col-md-10">
+                    <table id="tbDivisiones" class="table table-bordered table-hover">
+                        <thead>
+                            <tr class="ui-widget-header">
+                                <th class="texto-centrado">Id</th>
+                                <th class="texto-centrado">Descripción</th>
+                                <th class="texto-centrado">Código SAP</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                            <tr>
+                                <td class="id texto-centrado">@item.Id.ToString("D09")</td>
+                                <td class="desc texto-centrado">@item.descripcion</td>
+                                <td class="codSap texto-centrado">@item.codigoSap</td>
+                                <td class="texto-centrado">
+                                    <button class="EditButton btn btn-small btn-default " style="line-height:13px">  <i class="fa fa-pencil"> </i> </button>
+                                    @*<a class="btn btn-danger" style="line-height:15px" href="@Url.Action("Eliminar", "Division", new { id=item.Id})"
+                                       onclick="return confirm('¿Está seguro de eliminar este registro?')"><i class="fa fa-trash-o"></i></a>*@
+
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!--Modal División-->
+<div class="modal fade" id="modalDivision" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">Nueva División</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form" class="form-horizontal" style="margin-right:10px;margin-top:10px">
+                    <input type="hidden" id="DivId" />
+                    <div class="form-group">
+                        <label class="control-label col-sm-4" for="SucDes">Descripción:</label>
+                        <div class="col-sm-8">
+                            <input id="DivDes" type="text" class="form-control" placeholder="Ingrese la descripción..." />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-4" for="SucCodSap">Código SAP:</label>
+                        <div class="col-sm-8">
+                            <input id="DivCodSap" type="text" class="form-control" placeholder="Ingrese el código SAP..." />
+
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Cerrar</button>
+                <button id="btnModalSave" type="button" class=" btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*<div class="modal fade" id="modalDivision" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Nueva División</h4>
+                </div>
+
+                <div class="modal-body">
+                    <form id="modal-form"class="form-horizontal" style="margin-right:10px;margin-top:10px">
+                        <input type="hidden" id="DivId"/>
+                        <div class="form-group">
+                            <label class="control-label col-sm-4" for="DivDes">Descripción:</label>
+                            <div class="col-sm-8">
+                                <input id="DivDes" type="text" class="form-control" placeholder="Ingrese la descripción..."/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label col-sm-4" for="DivCodSap">Código SAP:</label>
+                            <div class="col-sm-8">
+                                <input id="DivCodSap" type="text" class="form-control" placeholder="Ingrese el código SAP..." />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cerrar</button>
+                    <button id="btnModalSave" type="button" class=" btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+    </div>*@
+
+<button type="button" id="frmDivNew" style="display:none">Nuevo</button>

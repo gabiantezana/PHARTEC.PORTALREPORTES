@@ -1,0 +1,222 @@
+﻿@{
+    ViewBag.Title = "Series por sucursal";
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("SucursalSeries");
+    TempData["clicked"] = permisos.Menu_id;
+    if (permisos.registra != null && permisos.registra == true)
+    {
+        ViewBag.New = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.NewAction = "frmSucursalSeriesNew";
+    }
+
+    if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro guardado con éxito");
+            });
+        </script>
+    }
+}
+
+<script type="text/javascript">
+    $(document).on('click', 'button.EditButton', function () {
+        
+        var myElem = this,
+            Id,
+            SucursalId,
+            Serie,
+            Descripcion;
+
+        //Capturar los valores de la fila
+        $($(myElem).closest('tr')).each(function () {
+            debugger;
+            Id = $(this).find(".id").html();
+            SucursalId = $(this).find(".sucursalId").html();
+            Serie = $(this).find(".serie").html();
+            Descripcion = $(this).find(".descripcion").html();
+        });
+
+        //Establecer los valores capturados en los elementos del Modal
+        $(".modal-body #_Id").val(Id);
+        $(".modal-body #_SucursalId").val(SucursalId);
+        $(".modal-body #_Serie").val(Serie);
+        $(".modal-body #_Descripcion").val(Descripcion);
+
+        //Motrar dialog
+        $('#modal').find("#myModalLabel").html('Editar ' );
+        $('#modal').modal('show');
+        return false;
+    });
+
+    $(function () {
+        $("#frmSucursalSeriesNew").on('click', function () {
+            $('.modal-body #modal-form')[0].reset();
+            $('#modal').modal('show');
+        });
+
+        //Agregar o Editar
+        $("#btnModalSave").on('click', function () {
+            debugger;
+            var Id = $(".modal-body #_Id"),
+                SucursalId = $(".modal-body #_SucursalId"),
+                Serie = $(".modal-body #_Serie"),
+                Descripcion = $(".modal-body #_Descripcion");
+
+            if (SucursalId.val() === '') {
+                notificacion(1, "Debe ingresar una sucursal");
+                return false;
+            }
+            else if (Serie.val() === '') {
+                notificacion(1, "Debe ingresar la serie")
+                return false;
+            }
+
+            if (Id.val() === '') {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Agregando serie...</div>',
+                    closeButton: false
+                });
+            }
+            else {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Modificando serie...</div>',
+                    closeButton: false
+                });
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '@(Url.Content("~/"))' + 'SucursalSeries/Save',
+                data: {
+                    id: Id.val(),
+                    sucursalId: SucursalId.val(),
+                    serie: Serie.val(),
+                    descripcion: Descripcion.val(),
+                },
+                success: function (r) {
+                    $('#modal').modal('hide');
+                    dialog.modal('hide');
+                    if (r.respuesta) {
+                        window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                    } else {
+                        if (r.error != "") {
+                            notificacion(1, r.error);
+                        }
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#modal').modal('hide');
+                    dialog.modal('hide');
+                    notificacion(1, errorThrown);
+                }
+            });
+        });
+
+
+
+    });
+</script>
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-cog" style="margin-right:4px"></i>Series por sucursal</li>
+</ol>
+
+<div class="row">
+    <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Series por sucursal</b>
+            </header>
+            <div class="panel-body table-responsive">
+                <div class="col-md-1"></div>
+                <div class="col-md-10">
+                    <table id="tbSucursales" class="table table-bordered table-hover">
+                        <thead>
+                            <tr class="ui-widget-header">
+                                
+                                <th class="texto-centrado">Sucursal</th>
+                                <th class="texto-centrado">Serie</th>
+                                <th class="texto-centrado">Descripción</th>
+                                                                <th></th>
+                            </tr>
+
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                            <tr>
+                                <td style="display:none" class="id texto-centrado">@item.Id.ToString()</td>
+                                <td style="display:none" class="sucursalId texto-centrado">@item.SucursalId</td>
+                                <td class="sucursal texto-centrado">@item.Sucursal.descripcion.ToString()</td>
+                                <td class="serie texto-centrado">@item.Serie</td>
+                                <td class="descripcion texto-centrado">@item.Descripcion</td>
+                                <td class="texto-centrado">
+                                    <button class="EditButton btn btn-small btn-default " style="line-height:13px">  <i class="fa fa-pencil"> </i> </button>
+                                    @*<a class="btn btn-danger" style="line-height:15px" href="@Url.Action("Eliminar", "Sucursal", new { id=item.Id})"
+            onclick="return confirm('¿Está seguro de eliminar este registro?')"><i class="fa fa-trash-o"></i></a>*@
+
+                                </td>
+
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</div>
+
+<!--Modal Sucursal-->
+
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">Nueva Serie</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form" class="form-horizontal" style="margin-right:10px;margin-top:10px">
+
+                    <input type="hidden" id="_Id" />
+
+                    <div class="form-group">
+                            <label class="control-label col-sm-4" for="_SucursalId">Sucursal:</label>
+                        <div class="col-sm-8">
+                            <div style="float:left">
+                                @Html.DropDownList("_SucursalId", null, null, new { @class = "form-control" ,@id="_SucursalId"})
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label col-sm-4" for="_Serie">Serie SAP:</label>
+                        <div class="col-sm-8">
+                            <input id="_Serie" type="text" class="form-control" placeholder="Ingrese la serie SAP..." />
+
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label col-sm-4" for="_Descripcion">Descripción de la serie:</label>
+                        <div class="col-sm-8">
+                            <input id="_Descripcion" type="text" class="form-control" placeholder="Ingrese la descripción de la serie SAP..." />
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Cerrar</button>
+                <button id="btnModalSave" type="button" class=" btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<button type="button" id="frmSucursalSeriesNew" style="display:none">Nuevo</button>

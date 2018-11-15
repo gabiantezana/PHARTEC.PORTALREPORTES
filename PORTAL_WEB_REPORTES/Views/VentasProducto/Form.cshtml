@@ -1,0 +1,458 @@
+﻿@{
+	ViewBag.Title = "Detalle de Venta";
+	<link href="~/Assets/css/pestana.css" rel="stylesheet" />
+
+	var datalista = ViewBag.resultado;
+	var totales = ViewBag.totales;
+
+	var esVendedor = ViewBag.esVendedor;
+
+	var datalistaPorVendedor = ViewBag.resultadoPorVendedor;
+	var totalesPorVendedor = ViewBag.totalesPorVendedor;
+
+
+	var datalistaPorDetalle = ViewBag.resultadoPorDetalle;
+	var totalesPorDetalle = ViewBag.totalesPorDetalle;
+
+	var filtros = ViewBag.filtros;
+
+	var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("VentasProducto");
+	TempData["clicked"] = permisos.Menu_id;
+
+	ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+	ViewBag.BackAction = "frmProdB";
+
+	if (permisos.exporta != null && permisos.exporta == true)
+	{
+		ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+
+		ViewBag.ExportarAction = "frmProdExp";
+
+	}
+
+}
+
+<script type="text/javascript">
+    $(function () {
+        var tabActiva = null;
+
+        $('#_desde').val('@filtros.Desde');
+        $('#_hasta').val('@filtros.Hasta');
+        $('#_tab').val('@filtros.Tab');
+
+
+
+        tabActiva = 'tab' + $('#_tab').val();
+        //debugger;
+
+        function activaTab(tab) {
+			$('.nav-tabs a[href="#' + tab + '"]').tab('show');
+
+        };
+
+        //abrir tercer tab con el Detalle desde pestaña Por cliente
+        $(".hrefAbrirDetalle_DesdeCliente").click(function (event) {
+            event.preventDefault();
+
+			var params = new Object();
+			params.cardCode = $(this).data("id");//<--este es el param mas importante
+			params.sucursal = '@filtros.Sucursal';
+			params.desde = $('#_desde').val();
+			params.hasta = $('#_hasta').val();
+			params.divisionx = '@filtros.Divisionx';
+			params.subdivisionx = '@filtros.Subdivisionx';
+			params.lineax = '@filtros.Lineax';
+			params.moneda = '@filtros.Moneda';
+			params.itemCode = '@filtros.ItemCode';
+
+			$.ajax({
+                type: "GET",
+                url: '@Url.Action("Details", "VentasProducto")',
+                data: params,
+                datatype: "html",
+                success: function (data) {
+					$('#detail').html(data);
+
+					//ir al tab detalle
+					activaTab('tab3primary');
+					tabActiva = "tab3";
+
+			}, error: function (XMLHttpRequest, textStatus, errorThrown) {
+				console.log(textStatus + ": " + XMLHttpRequest.responseText);
+			}
+
+
+			});
+
+
+        });
+
+		//abrir tercer tab con el Detalle desde pestaña vendedor
+        $(".hrefAbrirDetalle_DesdeVendedor").click(function (event) {
+            event.preventDefault();
+
+
+			var params = new Object();
+			params.slpCode = $(this).data("idslp");//<--este es el param mas importante
+			params.sucursal = '@filtros.Sucursal';
+			params.desde = $('#_desde').val();
+			params.hasta = $('#_hasta').val();
+			params.divisionx = '@filtros.Divisionx';
+			params.subdivisionx = '@filtros.Subdivisionx';
+			params.lineax = '@filtros.Lineax';
+			params.moneda = '@filtros.Moneda';
+			params.itemCode = '@filtros.ItemCode';
+
+
+			$.ajax({
+                type: "GET",
+                url: '@Url.Action("Details", "VentasProducto")',
+                data: params,
+                datatype: "html",
+                success: function (data) {
+					$('#detail').html(data);
+
+					//ir al tab detalle
+					activaTab('tab3primary');
+					tabActiva = "tab3";
+
+			}, error: function (XMLHttpRequest, textStatus, errorThrown) {
+				console.log(textStatus + ": " + XMLHttpRequest.responseText);
+			}
+
+
+			});
+
+
+		});
+
+        //ir a la tab 1 ó 3
+        activaTab('tab'+$('#_tab').val()+'primary');
+
+        $("#btnExportar").click(function (event) {
+            event.preventDefault();
+
+            var url = '@Url.Action("ExportarDetalle", "VentasProducto", new { tab = "TAB" })';
+
+            url = url.replace("TAB", tabActiva);
+            url = url.replace("amp;", "");
+            window.location.href = url;
+
+
+        });
+
+        //setean un valor para traer la tab actual
+        $("#tab1").click(function (event) {
+            tabActiva = this.id;
+
+        })
+        $("#tab2").click(function (event) {
+            tabActiva = this.id;
+
+        })
+        $("#tab3").click(function (event) {
+            tabActiva = this.id;
+
+        })
+
+        //////SORT TABLE
+
+        function sortTable(f, n, table) {
+            var rows = $('#' + table + ' tbody  tr').get();
+
+            rows.sort(function (a, b) {
+
+                var A = getVal(a);
+                var B = getVal(b);
+
+                if (A < B) {
+                    return -1 * f;
+                }
+                if (A > B) {
+                    return 1 * f;
+                }
+                return 0;
+            });
+
+            function getVal(elm) {
+                var v = $(elm).children('td').eq(n).text().toUpperCase().replace(',', '').replace('%', '');
+                if ($.isNumeric(v)) {
+                    v = parseInt(v, 10);
+                }
+                return v;
+            }
+
+            $.each(rows, function (index, row) {
+                $('#' + table).children('tbody').append(row);
+            });
+        }
+        var f_sl = 1;
+        var f_nm = 1;
+
+        $("td[id^='ph1']").click(function () {
+            f_sl *= -1;
+            var n = $("#" + this.id).prevAll().length;
+            sortTable(f_sl, n, 'tbVentasCliente');
+        });
+
+        $("td[id^='ph2']").click(function () {
+            f_sl *= -1;
+            var n = $("#" + this.id).prevAll().length;
+            sortTable(f_sl, n, 'tbVentasVendedor');
+        });
+
+	});
+
+	function volver() {
+		console.log('btnFormVolver');
+		event.preventDefault();
+
+			console.log('btnFormVolver');
+
+
+            var url = '@Url.Action("Index", "VentasProducto", new {
+                      sucursal = "SUCURSAL" ,
+                      moneda = "MONEDA",
+                      desde = "DESDE",
+                      hasta = "HASTA",
+                      divisionx = "DIVISIONX",
+                      subdivisionx = "SUBDIVISIONX",
+                      lineax = "LINEAX"
+                  })';
+
+            url = url.replace("amp;", "");
+            url = url.replace("SUCURSAL",  '@filtros.Sucursal');
+            url = url.replace("amp;", "");
+            url = url.replace("MONEDA",  '@filtros.Moneda');
+            url = url.replace("amp;", "");
+            url = url.replace("DESDE",  '@filtros.Desde');
+            url = url.replace("amp;", "");
+            url = url.replace("HASTA",  '@filtros.Hasta');
+            url = url.replace("amp;", "");
+            url = url.replace("DIVISIONX",  '@filtros.Divisionx');
+            url = url.replace("amp;", "");
+            url = url.replace("SUBDIVISIONX",  '@filtros.Subdivisionx');
+            url = url.replace("amp;", "");
+            url = url.replace("LINEAX",  '@filtros.Lineax');
+            url = url.replace("amp;", "");
+
+			//alert(url);
+
+			window.location.href = url;
+	}
+
+
+
+</script>
+
+
+<link href="~/Assets/css/tableStyle.css" rel="stylesheet" type="text/css" />
+
+<ol class="breadcrumb">
+	<li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+	<li><a href="~/VentasCliente"><i class="fa fa-users ibread"></i>Ventas por Producto</a></li>
+	<li class="active"><i class="fa fa-file ibread"></i>Detalle de Venta</li>
+</ol>
+
+<div class="row">
+
+	<div class="col-md-12">
+		<section class="panel">
+			<header class="panel-heading" style="height:48px">
+				<b>Detalle de Venta</b>
+			</header>
+			<div class="panel-body">
+				<div class="form-horizontal">
+					<div>
+						<div class="col-md-6" style="width:100%">
+							<div class="panel with-nav-tabs panel-primary" style="width:auto">
+								<div class="panel-heading">
+									<ul class="nav nav-tabs">
+										<li id="tab1" class="active"><a href="#tab1primary" data-toggle="tab">Por Cliente</a></li>
+										<li id="tab2"><a href="#tab2primary" data-toggle="tab">Por Vendedor</a></li>
+										<li id="tab3"><a href="#tab3primary" data-toggle="tab">Detalle</a></li>
+									</ul>
+								</div>
+
+
+								<div>
+									<input type="hidden" id="_hasta" />
+									<input type="hidden" id="_desde" />
+									<input type="hidden" id="_tab" />
+								</div>
+
+								<div class="panel-body">
+									<div class="tab-content">
+										<div class="tab-pane fade in active" id="tab1primary">
+                                            <div class="panel-body">
+                                                <div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+                                                    <div class="tableview tableview-has-footer">
+                                                        <div class="tableview-holder">
+                                                            <table id="tbVentasCliente">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <td id="ph101" caption="#" class="texto-centrado"></td>
+                                                                        <td id="ph102" caption="Nombre del cliente" class="texto-centrado"></td>
+                                                                        <td id="ph103" caption="Cantidad" class="texto-centrado"></td>
+                                                                        <td id="ph104" caption="Venta" class="texto-centrado"></td>
+                                                                        @if (!esVendedor)
+                                                                        {
+                                                                            <td id="ph105" caption="Compra" class="texto-centrado"></td>
+                                                                            <td id="ph106" caption="Margen" class="texto-centrado"></td>
+                                                                            <td id="ph107" caption="Venta estandarizada" class="texto-centrado"></td>
+                                                                        }
+                                                                    </tr>
+                                                                </thead>
+
+                                                                @*por cliente*@
+
+                                                                @if (datalista != null)
+                                                                {
+                                                                    <tbody>
+                                                                        @{int i = 1;}
+                                                                        @foreach (var item in datalista)
+                                                                        {
+                                                                            <tr>
+                                                                                <td class="id texto-centrado">@i</td>
+                                                                                <td class="descrip">
+                                                                                    <a class="hrefAbrirDetalle_DesdeCliente" href="" data-id="@item.CardCode">@item.CardName</a>
+                                                                                </td>
+                                                                                <td class="db_name texto-centrado">@item.Quantity.ToString("N2") </td>
+                                                                                <td>@item.TotalVenta.ToString("N2")</td>
+                                                                                @if (!esVendedor)
+                                                                                {
+                                                                                    <td>@item.TotalCosto.ToString("N2")</td>
+                                                                                    <td>@item.Margen.ToString("N2")% </td>
+                                                                                    <td>@item.MargenEstandarizado.ToString("N2") </td>
+                                                                                }
+                                                                            </tr>					i++;
+                                                                        }
+                                                                    </tbody>
+
+                                                                    <tfoot>
+                                                                        <tr>
+                                                                            <td class="texto-centrado" colspan="3"><div class="fixed">Totales</div></td>
+                                                                            <td class="texto-centrado"><div class="fixed">@totales.TotalVentas.ToString("N2")</div></td>
+
+                                                                            @if (!esVendedor)
+                                                                            {
+                                                                                <td class="texto-centrado"><div class="fixed">@totales.TotalCompras.ToString("N2")</div></td>
+                                                                                <td class="texto-centrado"><div class="fixed">@totales.TotalMargen.ToString("N2")% </div></td>
+                                                                                <td class="texto-centrado"><div class="fixed">@totales.TotalMargenEstandarizado.ToString("N2") </div></td>
+                                                                            }
+                                                                        </tr>
+
+                                                                    </tfoot>
+
+                                                                            }
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                    </div>
+                                                </div>
+                                                <div class="tab-pane fade" id="tab2primary">
+
+                                                    <div class="panel-body" style="color:white">
+                                                        <div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+                                                            <div class="tableview tableview-has-footer">
+                                                                <div class="tableview-holder">
+                                                                    <table id="tbVentasVendedor">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <td id="ph201" caption="#"> </td>
+                                                                                <td id="ph202" caption="Nombre del vendedor" class="texto-centrado"></td>
+                                                                                <td id="ph203" caption="Cantidad" class="texto-centrado"></td>
+                                                                                <td id="ph204" caption="Venta" class="texto-centrado"></td>
+                                                                                @if (!esVendedor)
+                                                                                {
+                                                                                    <td id="ph205" caption="Compra" class="texto-centrado"></td>
+                                                                                    <td id="ph206" caption="Margen" class="texto-centrado"></td>
+                                                                                    <td id="ph207" caption="Venta estandarizada" class="texto-centrado"></td>
+                                                                                }
+                                                                            </tr>
+                                                                        </thead>
+
+                                                                        @if (datalistaPorVendedor != null)
+                                                                        {
+                                                                            int i = 1;
+                                                                            <tbody>
+
+                                                                                @foreach (var item in datalistaPorVendedor)
+                                                                                {
+                                                                                    <tr>
+                                                                                        <td class="id texto-centrado">@i</td>
+                                                                                        <td class="descrip">
+                                                                                            <a class="hrefAbrirDetalle_DesdeVendedor" href="" data-idslp="@item.SlpCode">@item.SlpName</a>
+                                                                                        </td>
+                                                                                        <td class="db_name texto-centrado">@item.Quantity.ToString("N2")</td>
+                                                                                        <td>@item.TotalVenta.ToString("N2")</td>
+                                                                                        @if (!esVendedor)
+                                                                                        {
+                                                                                            <td>@item.TotalCosto.ToString("N2")</td>
+                                                                                            <td>@item.Margen.ToString("N2")%</td>
+                                                                                            <td>@item.MargenEstandarizado.ToString("N2") </td>
+                                                                                        }
+                                                                                    </tr>            i++;
+                                                                                }
+                                                                            </tbody>
+                                                                            <tfoot>
+                                                                                <tr>
+                                                                                    <td class="id texto-centrado" colspan="3"><div class="fixed">Totales</div></td>
+                                                                                    <td class="db_name texto-centrado"><div class="fixed">@totales.TotalVentas.ToString("N2")</div></td>
+
+                                                                                    @if (!esVendedor)
+                                                                                    {
+                                                                                        <td class="db_name texto-centrado"><div class="fixed">@totales.TotalCompras.ToString("N2")</div></td>
+                                                                                        <td class="db_name texto-centrado"><div class="fixed">@totales.TotalMargen.ToString("N2")% </div></td>
+                                                                                    }
+
+                                                                                    @if (!esVendedor)
+                                                                                    {
+                                                                                        <td class="db_name texto-centrado"><div class="fixed">@totales.TotalMargenEstandarizado.ToString("N2")</div> </td>
+                                                                                    }
+                                                                                </tr>
+                                                                            </tfoot>
+
+                                                                        }
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                                <div class="tab-pane fade" id="tab3primary">
+                                                    <div class="panel-body table-responsive">
+
+                                                        <div id="detail">
+                                                            @Html.Partial("Details")
+                                                        </div>
+
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</section>
+
+	</div>
+
+
+</div>
+
+<button type="button" id="frmProdB" style="display:none"
+		onclick="javascript:volver()">
+	Volver
+</button>
+
+<button type="button" id="frmProdExp" style="display:none">
+	Exportar
+</button>

@@ -1,0 +1,214 @@
+﻿@model Model.Rol
+
+@{
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Rol");
+    TempData["clicked"] = permisos.Menu_id;
+    
+    ViewBag.Save = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.New = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.SaveAction = "btnRolSave";
+    ViewBag.BackAction = "frmRolB";
+
+    if (Model.id > 0)
+    {
+        ViewBag.Cancel = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Back = Casuarinas.Helpers.Constantes.DISABLED;
+    }
+    else
+    {
+        ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Cancel = Casuarinas.Helpers.Constantes.DISABLED;
+    }
+
+    ViewBag.Title = (Model.id > 0 ? Model.id.ToString("D9") : "Nuevo registro");
+}
+
+<style type="text/css">
+    .checkbox
+    {
+        display:inline-block;
+        padding-left:5px;
+    }
+</style>
+
+<script>
+
+    $(document).ready(function () {
+        $(document).on('change', '#frm-rol table tbody tr .cbx-accesa', function (e) {
+            var $element_perm = $(this).parent().parent().parent().parent();
+            if ($(this).val() == '1') {
+                $element_perm.find('.td-visible').find('.cbx-registra').val('1');
+                $element_perm.find('.td-visible').find('.cbx-registra').prop('checked', true);
+                $element_perm.find('.td-visible').find('.cbx-modifica').val('1');
+                $element_perm.find('.td-visible').find('.cbx-modifica').prop('checked', true);
+                $element_perm.find('.td-visible').find('.cbx-consulta').val('1');
+                $element_perm.find('.td-visible').find('.cbx-consulta').prop('checked', true);
+                $element_perm.find('.td-visible').find('.cbx-elimina').val('1');
+                $element_perm.find('.td-visible').find('.cbx-elimina').prop('checked', true);
+                $element_perm.find('.td-visible').find('.cbx-imprime').val('1');
+                $element_perm.find('.td-visible').find('.cbx-imprime').prop('checked', true);
+                $element_perm.find('.td-visible').find('.cbx-exporta').val('1');
+                $element_perm.find('.td-visible').find('.cbx-exporta').prop('checked', true);
+            } else {
+                $element_perm.find('.td-visible').find('.cbx-registra').val('0');
+                $element_perm.find('.td-visible').find('.cbx-registra').prop('checked', false);
+                $element_perm.find('.td-visible').find('.cbx-modifica').val('0');
+                $element_perm.find('.td-visible').find('.cbx-modifica').prop('checked', false);
+                $element_perm.find('.td-visible').find('.cbx-consulta').val('0');
+                $element_perm.find('.td-visible').find('.cbx-consulta').prop('checked', false);
+                $element_perm.find('.td-visible').find('.cbx-elimina').val('0');
+                $element_perm.find('.td-visible').find('.cbx-elimina').prop('checked', false);
+                $element_perm.find('.td-visible').find('.cbx-imprime').val('0');
+                $element_perm.find('.td-visible').find('.cbx-imprime').prop('checked', false);
+                $element_perm.find('.td-visible').find('.cbx-exporta').val('0');
+                $element_perm.find('.td-visible').find('.cbx-exporta').prop('checked', false);
+            }
+            $element_perm.find('.row_permisos').checkboxX('refresh');
+        });
+
+        //Proceso de registro de un nuevo rol (AJAX request)
+        $("#frm-rol").submit(function () {
+            var form = $(this), counter = 0;
+
+            var mxrol = [];
+            $('#frm-rol table tbody tr').each(function () {
+                mxrol[counter] = $(this).find('.cbx-id-td input').val() + "|" +
+                    $(this).find('.cbx-accesa-td input').val() + "|" +
+                    $(this).find('.td-visible .cbx-registra').val() + "|" +
+                    $(this).find('.td-visible .cbx-modifica').val() + "|" +
+                    $(this).find('.td-visible .cbx-consulta').val() + "|" +
+                    $(this).find('.td-visible .cbx-elimina').val() + "|" +
+                    $(this).find('.td-visible .cbx-imprime').val() + "|" +
+                    $(this).find('.td-visible .cbx-exporta').val();
+                counter++;
+            });
+
+            if (form.validate()) {
+                form.ajaxSubmit({
+                    type: 'POST',
+                    traditional: true,
+                    url: form.attr('action'),
+                    data: { mxrol: mxrol },
+                    success: function (r) {
+                        if (r.respuesta) {
+                            window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                        } else {
+                            notificacion(1, r.error);
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        notificacion(1, errorThrown);
+                    }
+                });
+            }
+
+            return false;
+        });
+
+    });
+
+</script>
+
+<ol class="breadcrumb">
+  <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li><a href="~/Rol"><i class="fa fa-cog ibread"></i>Roles</a></li>
+  <li class="active"><i class="fa fa-file ibread"></i>@(Model.id > 0 ? Model.id.ToString("D9") : "Nuevo registro")</li>
+</ol>
+
+@using (Html.BeginForm("Guardar", "Rol", FormMethod.Post, new { id = "frm-rol", @class="form-horizontal" }))
+{
+    if (ViewData[Casuarinas.Helpers.Constantes.VIEWDATA_ALERT] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro actualizado con éxito");
+            });
+        </script>
+    }
+
+    @Html.HiddenFor(u => u.id)
+    <div class="panel panel-default" id="parentIP">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentIP" href="#divIP"><i class="fa fa-user" aria-hidden="true" style="margin-right:5px"></i> Información general</a>
+        </div>
+        <div id="divIP" class="panel-collapse collapse in panel-body">
+            <div class="form-group">
+                <label class="control-label col-sm-3" for="ItemTip">Descripción:</label>
+                <div class="col-sm-7">
+                    @Html.TextBoxFor(u => u.descripcion, new { @class = "form-control" })
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel-body table-responsive">
+                        <div class="col-md-12">
+                            <table id="tbRoles" class="table table-bordered table-hover">
+                                <thead>
+                                    <tr class="ui-widget-header">
+                                        <th class="texto-centrado">Item</th>
+                                        <th class="texto-centrado">Opción de Menú</th>
+                                        <th class="texto-centrado">Asignado</th>
+										
+                                        @*<th class="texto-centrado">Permisos</th>*@
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.MenuRol)
+                                    {
+                                        <tr>
+                                            <td style="display:none" class="cbx-id-td"><input type="hidden" name="menu_id" class="cbx-id" value="@item.Menu_id"/></td>
+                                            <td class="texto-centrado">@item.Menu_orden</td>
+                                            <td>@item.Menu_descripcion</td>
+                                            <td class="texto-centrado cbx-accesa-td">
+                                                <div class="checkbox">
+                                                    <input name="mxro_accesa" value="@(item.accesa? "1": "0")" @(item.accesa? "checked": "") class="cbx-accesa" type="checkbox"  data-toggle="checkbox-x"  data-three-state="false">
+                                                    <label>Accesa</label>
+                                                </div>
+                                            </td>
+                                            @*<td class="td-visible texto-centrado">
+                                                <div class="checkbox">
+                                                    <input name="mxro_registra" value="@(item.registra? "1":"0")" @(item.registra? "checked": "") class="cbx-registra row_permisos" type="checkbox"  data-toggle="checkbox-x"  data-three-state="false">
+                                                    <label>Registra</label>
+                                                </div>
+                                                <div class="checkbox">
+                                                    <input name="mxro_modifica" value="@(item.modifica? "1":"0")" @(item.modifica? "checked": "") class="cbx-modifica row_permisos" type="checkbox"  data-toggle="checkbox-x"  data-three-state="false">
+                                                    <label>Modifica</label>
+                                                </div>
+                                                <div class="checkbox">
+                                                    <input name="mxro_consulta" value="@(item.consulta? "1":"0")" @(item.consulta? "checked": "") class="cbx-consulta row_permisos" type="checkbox"  data-toggle="checkbox-x"  data-three-state="false">
+                                                    <label>Consulta</label>
+                                                </div>
+                                                <div class="checkbox">
+                                                    <input name="mxro_elimina" value="@(item.elimina? "1":"0")" @(item.elimina? "checked": "") class="cbx-elimina row_permisos" type="checkbox"  data-toggle="checkbox-x" data-three-state="false">
+                                                    <label>Elimina</label>
+                                                </div>
+                                                <div class="checkbox">
+                                                    <input name="mxro_imprime" value="@(item.imprime? "1":"0")" @(item.imprime? "checked": "") class="cbx-imprime row_permisos" type="checkbox"  data-toggle="checkbox-x" data-three-state="false">
+                                                    <label>Imprime</label>
+                                                </div>
+                                                <div class="checkbox">
+                                                    <input name="mxro_exporta" value="@(item.exporta? "1":"0")" @(item.exporta? "checked": "") class="cbx-exporta row_permisos" type="checkbox"  data-toggle="checkbox-x"  data-three-state="false">
+                                                    <label>Exporta</label>
+                                                </div>
+                                            </td>*@
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <button id="btnRolSave" type="submit" class="btn btn-primary btn-lg" style="width:300px;display:none">Guardar</button>
+            <button type="button" id="frmRolB" style="display:none" onclick="location.href='@Url.Action("Index","Rol")'">Volver</button>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+}

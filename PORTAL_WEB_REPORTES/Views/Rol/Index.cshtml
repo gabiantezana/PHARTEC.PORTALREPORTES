@@ -1,0 +1,72 @@
+﻿@model List<Model.Rol>
+
+@{
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Rol");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.registra != null && permisos.registra == true)
+    {
+        ViewBag.New = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.NewAction = "frmRolNew";
+    }
+  
+    ViewBag.Title = "Roles";
+}
+
+@if (ViewData[Casuarinas.Helpers.Constantes.VIEWDATA_ALERT] != null)
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            notificacion(0, "Registro actualizado con éxito");
+        });
+    </script>
+}
+
+<ol class="breadcrumb">
+   <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-cog" style="margin-right:4px"></i>Roles</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Roles</b> 
+            </header>
+            <div class="panel-body table-responsive">
+                <div class="col-md-1"></div>
+                <div class="col-md-10">
+                    <table id="tbRoles" class="table table-bordered table-hover">
+                        <thead>
+                            <tr class="ui-widget-header">
+                                <th class="texto-centrado">Código</th>
+                                <th class="texto-centrado">Descripción</th>
+                                <th class="texto-centrado">Fecha registro</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="texto-centrado">@item.id.ToString("D9")</td>
+                                    <td>@item.descripcion</td>
+                                    <td class="texto-centrado">@(string.Format("{0:yyyy-MM-dd}", item.fechaRegistro))</td>
+                                    @if (permisos.modifica != null && permisos.modifica == true)
+                                    {
+                                        <td class="texto-centrado">
+                                            <a class="btn btn-small btn-default" style="line-height:13px" href="@Url.Action("Details", "Rol", new { id = item.id })"><i class="fa fa-pencil"></i></a>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<button type="button" id="frmRolNew" style="display:none" onclick="location.href='@Url.Action("Form", "Rol")'">Nuevo</button>

@@ -1,0 +1,90 @@
+﻿@{
+    ViewBag.Title = "Inicio";
+    ViewBag.Save = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.New = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.Back = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.Cancel = Casuarinas.Helpers.Constantes.DISABLED;
+}
+
+
+<!--SignalR script to update the chat page and send messages.-->
+<script>
+    $(function () {
+
+        $('#divSAP').hide();
+
+        $("#liSap").on('click', function () {
+            $("#liWeb").removeClass("active");
+            $("#liSap").addClass("active");
+            $('#divWeb').hide();
+            $('#divSAP').show();
+            //$("#liSap").css("background-color", "#3C8DBC");
+        });
+
+        $("#liWeb").on('click', function () {
+            $("#liWeb").addClass("active");
+            $("#liSap").removeClass("active");
+            $('#divWeb').show();
+            $('#divSAP').hide();
+        });
+
+        // Reference the auto-generated proxy for the hub.
+        /*    var chat = $.connection.messageHub;
+
+            // Create a function that the hub can call back to display messages.
+            chat.client.addNewMessageToPage = function (name, message) {
+                // Add the message to the page.
+                $('#discussion').append('<li><strong>' + htmlEncode(name)
+                    + '</strong>: ' + htmlEncode(message) + '</li>');
+            };  */
+
+        // Get the user name and store it to prepend to messages.
+        //$('#displayname').val("Admin");
+
+        // Set initial focus to message input box.
+        //$('#message').focus();
+
+        // Start the connection
+        /*     if ($.connection.hub.id == null) {
+                 $.connection.hub.start().done(function () {
+                          $('#sendmessage').click(function () {
+                              // Call the Send method on the hub.
+                              chat.server.send($('#displayname').val(), $('#message').val());
+                              // Clear text box and reset focus for next comment.
+                              $('#message').val('').focus();
+                          });
+                     chat.server.update("7");
+
+
+                     $("p#44.test").css("background-color", "yellow");
+
+                 }).fail(function (reason) {
+                     notificacion(1, "SignalR connection failed: " + reason);
+                 });
+             }   */
+    });
+    // This optional function html-encodes messages for display in the page.
+    function htmlEncode(value) {
+        var encodedValue = $('<div />').text(value).html();
+        return encodedValue;
+    }
+</script>
+
+@if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+{
+    <script>
+        $(function () {
+            notificacion(0, "Bienvenido...");
+        });
+    </script>
+}
+
+<br />
+<div class="panel panel-default">
+    <p data-toggle="collapse" style="text-align:center; font-size:x-large"> Bienvenido te encuentras en el Portal Web de Reportes</p>
+</div>
+<br />
+
+<div align="center">
+    <img src="~/Assets/img/PhartecFondo.png" class="img-responsive" alt="Imagen de fondo Phartec" style="align-content:center" />
+</div>

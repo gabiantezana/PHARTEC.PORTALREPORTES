@@ -1,0 +1,114 @@
+﻿@model List<Model.SolicitudListModel>
+
+@{
+    ViewBag.Title = "Historial de solicitudes";
+    WebGrid wg = new WebGrid(Model, rowsPerPage: 10);
+
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Historial");
+    TempData["clicked"] = permisos.Menu_id;
+}
+
+<script type="text/javascript">
+
+    $(function () {
+
+        var from = $("#from").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            to.datepicker("option", "minDate", getDate(this));
+        }), to = $("#to").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            from.datepicker("option", "maxDate", getDate(this));
+        });
+
+        function getDate(element) {
+            var date;
+            try {
+                date = $.datepicker.parseDate("yy-mm-dd", element.value);
+            } catch (error) {
+                date = null;
+            }
+
+            return date;
+        }
+
+
+        $("#accion").selectpicker();
+
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+    });
+
+</script>
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-book ibread"></i>Historial de solicitudes</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Historial Solicitudes</b> 
+            </header>
+            
+            <div class="panel-body">
+                
+                @using (@Html.BeginForm("Index", "Historial", FormMethod.Get, new { @class = "form-horizontal" }))
+                {
+                    <div class="form-group" style="margin:20px; margin-bottom:30px"> 
+                        <label class="control-label col-sm-1" for="from">Desde: </label>
+                        <div class="col-sm-2">
+                            @Html.TextBox("from", null, new { @class = "form-control col-xs-4" })
+                        </div>
+
+                        <label class="control-label col-sm-1" for="to">Hasta: </label>
+                        <div class="col-sm-2">
+                            @Html.TextBox("to", null, new { @class = "form-control col-xs-4" })
+                        </div>
+
+                        <label class="control-label col-sm-1" for="to">Acción: </label>
+                        <div class="col-sm-3">
+                            @Html.DropDownList("accion", null, new { @class = "form-control", @title = "Seleccione..." })
+                        </div>
+
+                        <div class="col-sm-2">
+                            <button id="btnSearch" type="submit" class="search btn btn-primary">Buscar</button>
+                        </div>
+                    </div>
+                }
+
+                <div id="grdPend" class="table-responsive">
+                    @wg.GetHtml(
+                        tableStyle: "table table-bordered table-hover dataTable no-footer dtr-inline",
+                        nextText: "Siguiente >",
+                        previousText: "< Anterior",
+                        columns: new[]{
+                            wg.Column("SolicitudId",header:"ID", format: (item) => "MS" + item.SolicitudId.ToString("D9"), style: "texto-centrado"),
+                            wg.Column("EmpresaDes", header:"Empresa"),
+                            wg.Column("CentorCostoDes", header:"Centro de costo"),
+                            wg.Column("UsuarioNom", header:"Usuario"),
+                            wg.Column("FechaRegistro", header:"Fecha Registro", format : (item) => string.Format("{0:yyyy-MM-dd}", item.FechaRegistro), style: "texto-centrado"),
+                            wg.Column("FechaNecesaria", header: "Fecha Necesaria" , format : (item) => string.Format("{0:yyyy-MM-dd}", item.FechaNecesaria), style: "texto-centrado"),
+                            wg.Column("CantidadItems", header: "Items", style: "texto-centrado"),
+                            wg.Column("accion", header:"Acción", format: (item) => item.accion.Equals("A")? "Aprobado" : "Rechazado", style: "texto-centrado"),
+                            wg.Column(null, null,format: 
+                            @<text>
+                                    <a class="btn btn-primary" style="line-height:13px" href="@Url.Action("Details", "Pendientes", new { id= item.SolicitudId } )"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                           </text>, style: "texto-centrado")
+                        }
+                    ) 
+                </div>
+            </div>
+
+        </section>
+    </div>
+</div>

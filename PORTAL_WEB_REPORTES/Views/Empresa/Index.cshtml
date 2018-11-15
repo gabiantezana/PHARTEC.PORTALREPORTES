@@ -1,0 +1,334 @@
+﻿@model List<Model.Empresa>
+
+@{
+    ViewBag.Title = "Empresas";
+
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Empresa");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.registra != null && permisos.registra == true)
+    {
+        ViewBag.New = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.NewAction = "frmEmpNew";
+    }
+
+    if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro actualizado con éxito");
+            });
+        </script>
+    }
+}
+
+<script type="text/javascript">
+
+    $(function () {
+
+        $("#EmpBest").selectpicker();
+        $("#EmpEst").selectpicker();
+
+        $(document).on('click', 'button.removebutton', function () {
+
+            myElem = this;
+
+            bootbox.confirm({
+                title: "Deshabilitar empresa",
+                message: "Esta acción no eliminará los datos de la empresa, pero sí quedará desactivada para cualquier operación. ¿Desea continuar?",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirmar'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+
+                        var dialog = bootbox.dialog({
+                            message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Procesando...</div>',
+                            closeButton: false
+                        });
+
+                        var id;
+                        $($(myElem).closest('tr')).each(function () {
+                            id = $(this).find(".id").html();
+                        });
+
+                        $.ajax({
+                            type: 'POST',
+                            traditional: true,
+                            url: '@(Url.Content("~/"))' + 'empresa/Eliminar',
+                            data: { id: id },
+                            success: function (r) {
+                                dialog.modal('hide');
+                                if (r.respuesta) {
+                                    window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                                } else {
+                                    if (r.error != "") {
+                                        notificacion(1, r.error);
+                                    }
+                                }
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                dialog.modal('hide');
+                                notificacion(1, errorThrown);
+                            }
+                        });
+                    }
+                }
+            });
+
+            return false;
+        });
+
+        $(document).on('click', 'button.editbutton', function () {
+
+            var myElem = this,
+                EmpId,
+                EmpDes,
+                EmpDbn,
+                EmpDbu,
+                EmpDbp,
+                EmpEst;
+
+            //Capturar los valores de la fila
+            $($(myElem).closest('tr')).each(function () {
+                EmpId = $(this).find(".id").html();
+                EmpDes = $(this).find(".descrip").html();
+                EmpDbn = $(this).find(".db_name").html();
+                EmpDbu = $(this).find(".db_user").html();
+                EmpDbp = $(this).find(".db_pass").html();
+                EmpEst = $(this).find(".estado span").html();
+            });
+
+            //Establecer los valores capturados en los elementos del dialog
+            $(".modal-body #EmpId").val(EmpId);
+            $(".modal-body #EmpDes").val(EmpDes);
+            $(".modal-body #EmpDbn").val(EmpDbn);
+            $(".modal-body #EmpDbu").val(EmpDbu);
+            $(".modal-body #EmpDbp").val(EmpDbp);
+            $(".modal-body #EmpEst").val(EmpEst === 'Inactivo'? 'I': 'A');
+            $("select").selectpicker('refresh');
+
+            //Mostrar dialog
+            $('#modalEmpresa').find('#myModalLabel').html('Editar - ' + EmpDes);
+            $('#modalEmpresa').modal('show');
+
+            return false;
+        });
+
+        $("#frmEmpNew").on('click', function () {
+            $('.modal-body #modal-form')[0].reset();
+            $(".modal-body #EmpEst").val('A');
+            $("select").selectpicker('refresh');
+            $('#modalEmpresa').modal('show');
+        });
+
+        //Agregar / Editar
+        $("#btnModalSave").on('click', function () {
+
+            var EmpId = $(".modal-body #EmpId"),
+                EmpDes = $(".modal-body #EmpDes"),
+                EmpDbn = $(".modal-body #EmpDbn"),
+                EmpDbu = $(".modal-body #EmpDbu"),
+                EmpDbp = $(".modal-body #EmpDbp"),
+                EmpEst = $(".modal-body #EmpEst");
+
+            if (EmpDes.val() === '') {
+                notificacion(1, "Debe ingresar una descripción");
+                return false;
+            } else if (EmpDbn.val() === '') {
+                notificacion(1, "Debe ingresar un nombre de BD");
+                return false;
+            } else if (EmpDbu.val() === '') {
+                notificacion(1, "Debe ingresar un nombre de usuario");
+                return false;
+            } else if (EmpDbp.val() === '') {
+                notificacion(1, "Debe ingresar el password");
+                return false;
+            }
+
+            if (EmpId.val() === '') {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Agregando Empresa...</div>',
+                    closeButton: false
+                });
+            } else {
+                var dialog = bootbox.dialog({
+                    message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Modificando Empresa...</div>',
+                    closeButton: false
+                });
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '@(Url.Content("~/"))' + 'empresa/Guardar',
+                data: {
+                    EmpresaId: EmpId.val(),
+                    EmpresaDes: EmpDes.val(),
+                    EmpresaDbn: EmpDbn.val(),
+                    EmpresaDbu: EmpDbu.val(),
+                    EmpresaDbp: EmpDbp.val(),
+                    EmpresaEst: EmpEst.val()
+                },
+                success: function (r) {
+                    $('#modalEmpresa').modal('hide');
+                    dialog.modal('hide');
+                    if (r.respuesta) {
+                        window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                    } else {
+                        if (r.error != "") {
+                            notificacion(1, r.error);
+                        }
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#modalEmpresa').modal('hide');
+                    dialog.modal('hide');
+                    notificacion(1, errorThrown);
+                }
+            });
+        });
+
+    });
+
+</script>
+
+<ol class="breadcrumb">
+   <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-suitcase ibread"></i>Empresas registradas</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                Empresas
+            </header>
+
+            @using (@Html.BeginForm("Index", "Empresa", FormMethod.Get, new { @class = "form-horizontal" }))
+            {
+                <div class="form-group" style="margin:20px"> 
+                    <div class="col-sm-2">
+                        @Html.TextBox("EmpBCod", null, new { @class = "form-control col-xs-4", @placeholder = "Código", @type = "number" })
+                    </div>
+
+                    <div class="col-sm-4">
+                        @Html.TextBox("EmpBDesNom", null, new { @class = "form-control col-xs-4", @placeholder = "Descripción o Nombre BD" })
+                    </div>
+
+                    <label class="control-label col-sm-1" for="to">Estado: </label>
+                    <div class="col-sm-3">
+                         @Html.DropDownList("EmpBest", null, new { @class = "form-control", @title = "Seleccione..." })
+                    </div>
+
+                    <div class="col-sm-2">
+                        <button id="btnSearch" style="width:120px" type="submit" class="search btn btn-primary">Buscar</button>
+                    </div>
+                </div>
+            }
+            
+            <div class="panel-body table-responsive">
+                <table id="tbRoles" class="table table-bordered table-hover">
+                    <thead>
+                        <tr class="ui-widget-header">
+                            <th class="texto-centrado">Código</th>
+                            <th class="texto-centrado">Descripción</th>
+                            <th class="texto-centrado">Nombre BD</th>
+                            <th class="texto-centrado">Usuario BD</th>
+                            <th class="texto-centrado">Password BD</th>
+                            <th class="texto-centrado">Estado</th>
+                            <th class="texto-centrado">Validación SL</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="id texto-centrado">@item.id</td>
+                                <td class="descrip">@item.descripcion</td>
+                                <td class="db_name texto-centrado">@item.db_name</td>
+                                <td class="db_user texto-centrado">@item.usuario</td>
+                                <td class="db_pass texto-centrado">@item.password</td>
+                                <td class="estado texto-centrado"><span class="label label-@(item.estado.Equals("I") ? "danger" : "primary")">@(item.estado.Equals("I") ? "Inactivo" : "Activo")</span></td>
+                                <td class="texto-centrado">@item.validacion_sl</td>
+                                <td class="texto-centrado">
+                                    @if (permisos.modifica != null && permisos.modifica == true)
+                                    {
+                                        <button class="editbutton btn btn-small btn-default" style="line-height:13px"><i class="fa fa-pencil"></i></button>
+                                    }
+                                    @if (permisos.elimina != null && permisos.elimina == true)
+                                    {
+                                        <button class="removebutton btn btn-small btn-default" style="line-height:13px"><i class="fa fa-trash-o"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Modal Empresa-->
+<div class="modal fade" id="modalEmpresa" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Nueva Empresa</h4>
+      </div>
+      <div class="modal-body">
+         <form id="modal-form" class="form-horizontal" style="margin-right:10px; margin-top:10px">
+             <input type="hidden" id="EmpId"/>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="EmpDes">Descripción:</label>
+            <div class="col-sm-8">
+                <input id="EmpDes" class="form-control" placeholder="Ingrese la descripción...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="EmpDbn">Nombre BD:</label>
+            <div class="col-sm-8">
+                <input id="EmpDbn" type="text" class="form-control" placeholder="Ingrese el nombre de la DB...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="EmpDbu">Usuario BD:</label>
+            <div class="col-sm-8">
+              <input id="EmpDbu" type="text" class="form-control" placeholder="Ingrese el usuario...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="EmpDbp">Password BD:</label>
+            <div class="col-sm-8">
+              <input id="EmpDbp" type="text" class="form-control datepicker" placeholder="Ingrese el password...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="EmpEst">Estado:</label>
+            <div class="col-sm-8">
+              <select id="EmpEst" class="form-control" title="Seleccione...">
+                  <option selected value="A"> Activo </option>
+                  <option selected value="I"> Inactivo </option>
+              </select>
+            </div>
+          </div>
+        </form> 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        <button id="btnModalSave" type="button" class="btn btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<button type="button" id="frmEmpNew" style="display:none">Nuevo</button>

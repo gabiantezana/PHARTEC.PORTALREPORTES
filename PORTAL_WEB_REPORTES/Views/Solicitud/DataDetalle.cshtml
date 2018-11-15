@@ -1,0 +1,49 @@
+﻿@model List<Model.SolicitudDetalle>
+
+<style>
+  #sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+  #sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 48px; }
+  #sortable li span { position: absolute; margin-left: -1.3em; }
+</style>
+
+<div class="table-responsive">
+    <table id="tbNiveles" class="table table-bordered table-hover">
+        @if (ViewBag.Detalles != null)
+        {
+            <thead>
+                <tr class="ui-widget-header">
+                    <th class="texto-centrado">Código SAP</th>
+                    <th class="texto-centrado">Artículo/Servicio</th>
+                    <th class="texto-centrado">Fecha necesaria</th>
+                    <th class="texto-centrado">Cantidad necesaria</th>
+                    <th class="texto-centrado">Comentario</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in ViewBag.Detalles)
+                {
+                    <tr>
+                        <td class="id" style="display:none">@item.temporal_id</td>
+                        <td class="csap">@item.Articulo_codigosap</td>
+                        <td class="des">@item.descripcion</td>
+                        <td class="fec texto-centrado">@(string.Format("{0:yyyy-MM-dd}",item.fechaNecesaria))</td>
+                        <td class="cant texto-centrado">@item.cantidad</td>
+                        <td class="comm">@item.comentario</td>
+                        <td class="texto-centrado">
+                            <button type="button" class='editbutton ui-button ui-widget ui-corner-all ui-button-icon-only' 
+                                style='width:40px; height:32px' title='Editar'> 
+                                <span class='ui-icon ui-icon-pencil'></span>
+                            </button>
+                            <button type="button" class='removebutton ui-button ui-widget ui-corner-all ui-button-icon-only' 
+                                style='width:40px; height:32px' title='Eliminar'> 
+                                <span class='ui-icon ui-icon-trash'></span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+</div>

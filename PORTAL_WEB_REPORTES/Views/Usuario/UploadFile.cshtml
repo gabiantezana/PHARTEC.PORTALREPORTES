@@ -1,0 +1,47 @@
+﻿<style>
+    .format-column_mail{
+        width: 120px !important;
+    }
+</style>
+<div class="table-responsive">
+    <table id="tbUsers" class="table-hover table-condensed">
+        @if (TempData["detalles"] != null)
+        {
+            <thead>
+                <tr class="ui-widget-header">
+                    <th class="texto-centrado">Rol</th>
+                    <th class="texto-centrado">Nombre</th>
+                    <th class="texto-centrado">Usuario Web</th>
+                    <th class="texto-centrado">Password</th>
+                    <th class="texto-centrado format-column_mail">Correo</th>
+                    <th class="texto-centrado">Empresa</th>
+                    <th class="texto-centrado">Fecha registro</th>
+                    <th class="texto-centrado">Cód. SAP</th>
+                    <th class="texto-centrado">Centro de costo</th>
+                    <th class="texto-centrado">Validación</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in (List<Model.Usuario>)TempData["detalles"])
+                {
+                    <tr>
+                        <td style="word-break:inherit">@item.Rol_Descripcion</td>
+                        <td class="usr_nom" style="word-break:break-all; width:200px">@item.nombre</td>
+                        <td class="usr_cue" style="word-break:break-all; width:auto">@item.cuentaWeb</td>
+                        <td class="usr_pwd" style="word-break:inherit; width:auto">@item.passWeb</td>
+                        <td class="usr_ema" style="word-break:break-all; width:auto">@item.correo</td>
+                        <td style="word-break:break-all; width:auto">@item.Empresa_Descripcion</td>
+                        <td class="usr_fec" style="word-break:inherit; width:auto">@(string.Format("{0:yyyy-MM-dd}",item.fechaRegistro))</td>
+                        <td class="usr_sap" style="word-break:break-all; width:auto">@item.codigo_sap</td>
+                        <td style="word-break:inherit; width:auto">@item.CentroCosto_Sap</td>
+                        <td style="word-break:break-all; width:auto; color:@(item.validacion.Equals("Datos correctos")? "#3c8dbc" : "red")"><b class="usr_val">@item.validacion </b></td>
+                        <td class="usr_rol" style="word-break:break-all; display:none; width:auto">@(item.Rol != null ? item.Rol.id : -1)</td>
+                        <td class="usr_emp" style="word-break:break-all; display:none; width:auto">@(item.Empresas.Count >= 1 ? item.Empresas.Take(1).Single().id : -1)</td>
+                        <td class="usr_cco" style="word-break:break-all; display:none; width:auto">@(item.CentrosCosto.Count >= 1 ? item.CentrosCosto.Take(1).Single().id : -1)</td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+</div>

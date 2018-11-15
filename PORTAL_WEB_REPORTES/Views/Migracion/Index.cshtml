@@ -1,0 +1,91 @@
+﻿@model List<Model.MigracionLog>
+
+@{
+    ViewBag.Title = "Migración";
+    WebGrid wg = new WebGrid(Model, rowsPerPage: 10);
+
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Migracion");
+    TempData["clicked"] = permisos.Menu_id;
+}
+
+<script>
+
+    $(function () {
+        var from = $("#from").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            to.datepicker("option", "minDate", getDate(this));
+        }), to = $("#to").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            from.datepicker("option", "maxDate", getDate(this));
+        });
+
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+    });
+
+</script>
+
+<ol class="breadcrumb">
+   <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-paper-plane ibread"></i>Migración</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                Migración de documentos a SAP
+            </header>
+
+            @using (@Html.BeginForm("Index", "Migracion", FormMethod.Get, new { @class = "form-horizontal" }))
+            {
+                <div class="form-group" style="margin:20px"> 
+                    <div class="col-sm-2">
+                        @Html.TextBox("DocId", null, new { @class = "form-control col-xs-4", @placeholder = "Código Doc.", @type="number"})
+                    </div>
+
+                    <label class="control-label col-sm-1" for="from">Desde: </label>
+                    <div class="col-sm-2">
+                        @Html.TextBox("from", null, new { @class = "form-control col-xs-4" })
+                    </div>
+
+                    <label class="control-label col-sm-1" for="to">Hasta: </label>
+                    <div class="col-sm-2">
+                        @Html.TextBox("to", null, new { @class = "form-control col-xs-4" })
+                    </div>
+
+                    <div class="col-sm-2">
+                        <button id="btnSearch" style="width:120px" type="submit" class="search btn btn-primary">Buscar</button>
+                    </div>
+                </div>
+            }
+            
+            <div class="panel-body table-responsive">
+                @wg.GetHtml(
+                    tableStyle:"table table-bordered table-hover dataTable no-footer dtr-inline",
+                    nextText: "Siguiente >",
+                    previousText: "< Anterior",
+                    columns: new []{
+                        wg.Column("DocumentoId",header:"Código Doc.", style: "texto-centrado"),
+                        wg.Column("Estado_actual", header:"Estado Actual", format:(item => item.Estado_actual.Equals(Casuarinas.Helpers.EstadoSolicitud.APROBADA)? "Aprobada (Web)": (
+                                    item.Estado_actual.Equals(Casuarinas.Helpers.EstadoSolicitud.RegistradaEnSAP)? "Registrada (SAP)":(
+                                    item.Estado_actual.Equals(Casuarinas.Helpers.EstadoSolicitud.OrdenDeCompra)? "Orden de compra (SAP)": "Ingreso almacén (SAP)"
+                                ))), style: "texto-centrado"),
+                        wg.Column("Mensage_error", header: "Mensaje error"),
+                        wg.Column("Migracion_estado", header: "Estado Migración",format:(item => item.Migracion_estado.Equals("1")? "Exitoso": "Error"), style: "texto-centrado"),
+                        wg.Column("FechaRegistro", header:"Fecha Registro", canSort:false, format : (item) => string.Format("{0:yyyy-MM-dd  hh:mm tt}", item.FechaRegistro), style: "texto-centrado"),
+                        wg.Column("FechaActualizacion", header:"Fecha Actualización", canSort:false, format : (item) => item.FechaActualizacion != null? string.Format("{0:yyyy-MM-dd  hh:mm tt}", item.FechaActualizacion) : "", style: "texto-centrado")
+                    }
+                )
+            </div>
+        </section>
+    </div>
+</div>

@@ -1,0 +1,120 @@
+﻿@model Model.Usuario
+
+@{
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Usuario");
+    TempData["clicked"] = permisos.Menu_id;
+
+    ViewBag.Save = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.New = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.Cancel = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.BackAction = "frmUsrB";
+    ViewBag.Editar = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.EditAction = "btnUsrEdit";
+
+    ViewBag.Title = Model.nombre;
+    List<Model.Sucursal> allSucursales = ViewBag.Sucursales;
+    List<Model.Division> allDivisiones = ViewBag.Divisiones;
+    List<Model.SubDivision> allSubdivisiones = ViewBag.Subdivisiones;
+    List<Model.Linea> allLineas = ViewBag.Lineas;
+}
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li><a href="~/Usuario"><i class="fa fa-users ibread"></i>Usuarios</a></li>
+    <li class="active"><i class="fa fa-user ibread"></i>@(Model.nombre)</li>
+</ol>
+
+<div class="panel panel-default">
+    <div class="panel-heading"><b>Información personal</b></div>
+    <div class="panel-body">
+        <dl class="dl-horizontal">
+            <dt>Nombre</dt>
+            <dd>@Model.nombre</dd>
+            <dt>Rol</dt>
+            <dd>@Model.Rol.descripcion</dd>
+            <dt>Usuario Web</dt>
+            <dd>@Model.cuentaWeb</dd>
+            <dt>Correo</dt>
+            <dd>@Model.correo</dd>
+            <dt>Estado</dt>
+            @if (Model.estado.Equals("A"))
+            {
+                <dd>Activo</dd>
+            }
+            else
+            {
+                <dd>Inactivo</dd>
+            }
+            <dt>Fecha de registro</dt>
+            <dd>@Model.fechaRegistro</dd>
+            <dt>Código SAP</dt>
+            <dd>@Model.codigo_sap</dd>
+        </dl>
+    </div>
+</div>
+
+
+
+<div class="panel panel-default">
+    <div class="panel-heading"><b>Sucursales asignadas</b></div>
+    <div class="panel-body">
+        <ul class="list-group">
+            @foreach (var s in Model.Sucursales)
+            {
+                <li class="list-group-item">
+                    @s.descripcion
+                </li>
+            }
+
+        </ul>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <b>Divisiones asignadas</b>
+    </div>
+    <div class="panel-body">
+        <ul class="list-group">
+            @foreach (var item in Model.Divisiones)
+            {
+                <li class="list-group-item">@item.descripcion</li>
+            }
+        </ul>
+
+    </div>
+</div>
+
+<!--Subdivisiones-->
+<div class="panel panel-default">
+    <div class="panel-heading"><b>Subdivisiones asignadas</b></div>
+    <div class="panel-body">
+        <ul class="list-group">
+            @foreach (var item in Model.Subdivisiones)
+            {
+                <li class="list-group-item" >
+                    @item.descripcion
+                </li>
+            }
+        </ul>
+    </div>
+    
+</div>
+
+<!--Lineas-->
+<div class="panel panel-default">
+    <div class="panel-heading"><b>Líneas asignadas</b></div>
+    <div class="panel-body">
+        <ul class="list-group">
+            @foreach (var item in Model.Lineas)
+            {
+                <li class="list-group-item">
+                    @item.descripcion
+                </li>
+            }
+        </ul>
+    </div>
+    <button type="button" id="frmUsrB" style="display:none" onclick="location.href='@Url.Action("Index","Usuario")'">Volver</button>
+    <button type="button" id="btnUsrEdit" style="display:none" onclick="location.href='@Url.Action("Form","Usuario", new { id = Model.id })'">Editar</button>
+</div>

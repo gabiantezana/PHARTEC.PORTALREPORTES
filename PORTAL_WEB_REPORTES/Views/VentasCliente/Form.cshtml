@@ -1,0 +1,595 @@
+﻿@{
+	ViewBag.Title = "Detalle de Venta";
+	<link href="~/Assets/css/pestana.css" rel="stylesheet" />
+
+	var datalista = ViewBag.resultado;
+	var totales = ViewBag.totales;
+
+	var esVendedor = ViewBag.esVendedor;
+
+	var datalistaPorVendedor = ViewBag.resultadoPorVendedor;
+	var totalesPorVendedor = ViewBag.totalesPorVendedor;
+
+
+	var datalistaPorDetalle = ViewBag.resultadoPorDetalle;
+	var totalesPorDetalle = ViewBag.totalesPorDetalle;
+
+	var filtros = ViewBag.filtros;
+
+	var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("VentasCliente");
+	TempData["clicked"] = permisos.Menu_id;
+
+	ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+	ViewBag.BackAction = "frmProdB";
+
+	if (permisos.exporta != null && permisos.exporta == true)
+	{
+		ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+
+		ViewBag.ExportarAction = "frmProdExp";
+
+	}
+
+}
+
+<script type="text/javascript">
+    $(function () {
+        var tabActiva = null;
+
+        $('#_desde').val('@filtros.Desde');
+        $('#_hasta').val('@filtros.Hasta');
+        $('#_tab').val('@filtros.Tab');
+
+
+
+        tabActiva = 'tab' + $('#_tab').val();
+        //debugger;
+
+        function activaTab(tab) {
+			$('.nav-tabs a[href="#' + tab + '"]').tab('show');
+
+        };
+
+
+
+        //abrir tercer tab con el Detalle desde pestaña producto
+        $(".hrefAbrirDetalle_CodeProduct").click(function (event) {
+
+            event.preventDefault();
+
+			var params = new Object();
+			params.itemCode = $(this).data("id");
+			params.slpCode = null;
+			params.cardCode = '@filtros.CardCode';
+			params.sucursal = '@filtros.Sucursal';
+			params.desde = $('#_desde').val();
+			params.hasta = $('#_hasta').val();
+			params.divisionx = '@filtros.Divisionx';
+			params.subdivisionx = '@filtros.Subdivisionx';
+			params.lineax = '@filtros.Lineax';
+			params.moneda = '@filtros.Moneda';
+
+			//debugger;
+
+			$.ajax({
+                type: "GET",
+                url: '@Url.Action("Details", "VentasCliente")',
+                data: params,
+                datatype: "html",
+                success: function (data) {
+					$('#detail').html(data);
+
+					//ir al tab detalle
+					activaTab('tab3primary');
+					tabActiva = "tab3";
+
+			}, error: function (XMLHttpRequest, textStatus, errorThrown) {
+				console.log(textStatus + ": " + XMLHttpRequest.responseText);
+			}
+
+
+			});
+
+
+        });
+
+		//abrir tercer tab con el Detalle desde pestaña vendedor
+        $(".hrefAbrirDetalle_CodeVendedor").click(function (event) {
+            event.preventDefault();
+
+
+			var params = new Object();
+			params.itemCode = null;
+			params.slpCode = $(this).data("idslp");
+			params.cardCode = '@filtros.CardCode';
+			params.sucursal = '@filtros.Sucursal';
+			params.desde = $('#_desde').val();
+			params.hasta = $('#_hasta').val();
+			params.divisionx = '@filtros.Divisionx';
+			params.subdivisionx = '@filtros.Subdivisionx';
+			params.lineax = '@filtros.Lineax';
+			params.moneda = '@filtros.Moneda';
+
+			//debugger;
+
+			$.ajax({
+                type: "GET",
+                url: '@Url.Action("Details", "VentasCliente")',
+                data: params,
+                datatype: "html",
+                success: function (data) {
+					$('#detail').html(data);
+
+					//ir al tab detalle
+					activaTab('tab3primary');
+					tabActiva = "tab3";
+
+			}, error: function (XMLHttpRequest, textStatus, errorThrown) {
+				console.log(textStatus + ": " + XMLHttpRequest.responseText);
+			}
+
+
+			});
+
+
+		});
+
+        //ir a la tab 1 ó 3
+        activaTab('tab'+$('#_tab').val()+'primary');
+
+        $("#btnExportar").click(function (event) {
+            event.preventDefault();
+
+            var url = '@Url.Action("ExportarDetalle", "VentasCliente", new { tab = "TAB" })';
+
+            url = url.replace("TAB", tabActiva);
+            url = url.replace("amp;", "");
+            window.location.href = url;
+
+
+        });
+
+        //setean un valor para traer la tab actual
+        $("#tab1").click(function (event) {
+            tabActiva = this.id;
+
+        })
+        $("#tab2").click(function (event) {
+            tabActiva = this.id;
+
+        })
+        $("#tab3").click(function (event) {
+            tabActiva = this.id;
+
+        })
+
+        
+        //instanciarListaXProducto();
+
+        //////SORT TABLE
+
+        function sortTable(f, n, table) {
+            var rows = $('#' + table + ' tbody  tr').get();
+
+            rows.sort(function (a, b) {
+
+                var A = getVal(a);
+                var B = getVal(b);
+
+                if (A < B) {
+                    return -1 * f;
+                }
+                if (A > B) {
+                    return 1 * f;
+                }
+                return 0;
+            });
+
+            function getVal(elm) {
+                var v = $(elm).children('td').eq(n).text().toUpperCase().replace(',', '').replace('%', '');
+                if ($.isNumeric(v)) {
+                    v = parseInt(v, 10);
+                }
+                return v;
+            }
+
+            $.each(rows, function (index, row) {
+                $('#' + table).children('tbody').append(row);
+            });
+        }
+        var f_sl = 1;
+        var f_nm = 1;
+
+        $("td[id^='ph1']").click(function () {
+            f_sl *= -1;
+            var n = $("#" + this.id).prevAll().length;
+            sortTable(f_sl, n, 'tbVentasProducto');
+        });
+
+        $("td[id^='ph2']").click(function () {
+            f_sl *= -1;
+            var n = $("#" + this.id).prevAll().length;
+            sortTable(f_sl, n, 'tbVentasVendedor');
+        });
+
+
+	});
+
+	function volver() {
+		console.log('btnFormVolver');
+		event.preventDefault();
+
+			console.log('btnFormVolver');
+
+
+            var url = '@Url.Action("Index", "VentasCliente", new {
+                      sucursal = "SUCURSAL" ,
+                      moneda = "MONEDA",
+                      desde = "DESDE",
+                      hasta = "HASTA",
+                      divisionx = "DIVISIONX",
+                      subdivisionx = "SUBDIVISIONX",
+                      lineax = "LINEAX"
+                  })';
+
+            url = url.replace("amp;", "");
+            url = url.replace("SUCURSAL",  '@filtros.Sucursal');
+            url = url.replace("amp;", "");
+            url = url.replace("MONEDA",  '@filtros.Moneda');
+            url = url.replace("amp;", "");
+            url = url.replace("DESDE",  '@filtros.Desde');
+            url = url.replace("amp;", "");
+            url = url.replace("HASTA",  '@filtros.Hasta');
+            url = url.replace("amp;", "");
+            url = url.replace("DIVISIONX",  '@filtros.Divisionx');
+            url = url.replace("amp;", "");
+            url = url.replace("SUBDIVISIONX",  '@filtros.Subdivisionx');
+            url = url.replace("amp;", "");
+            url = url.replace("LINEAX",  '@filtros.Lineax');
+            url = url.replace("amp;", "");
+
+			//alert(url);
+
+			window.location.href = url;
+	}
+
+    function instanciarListaXProducto() {
+        jQuery("#tbVentasProducto").jqGrid({
+            datatype: "local",
+            height: 200,
+            colNames: ['Código', 'Nombre del Producto', 'Linea', 'Cantidad', 'Venta Unit', 'Venta',
+                'Costo Unit', 'Compra', 'Margen', 'Venta estandarizada'],
+            colModel: [{ name: 'ItemCode', index: 'ItemCode', width: 100, formatter: editLink },
+                        { name: 'Description', index: 'Description', width: 200 },
+                        { name: 'OcrCode3', index: 'OcrCode3', width: 100 },
+                        { name: 'Quantity', index: 'Quantity', width: 100, sorttype: "float", formatter: 'number' },
+                        { name: 'VentaUnit', index: 'VentaUnit', width: 120, sorttype: "float", formatter: 'number' },
+                        { name: 'TotalVenta', index: 'TotalVenta', width: 120, sorttype: "float", formatter: 'number' },
+                        { name: 'CostoUnit', index: 'CostoUnit', width: 120, sorttype: 'float', formatter: 'number' },
+                        { name: 'TotalCosto', index: 'TotalCosto', width: 120, sorttype: "float", formatter: 'number' },
+                        { name: 'Margen', index: 'Margen', width: 100, formatter: 'currency', formatoptions: { suffix: " %" } },
+                        { name: 'MargenEstandarizado', index: 'MargenEstandarizado', width: 100, sorttype: "float", formatter: 'number'}],
+            caption: "Por producto",
+            rowNum: 900000,
+            footerrow: true,
+            rownumbers: true,
+            autowidth: true,
+            shrinkToFit: false,
+            gridComplete: function () {
+                var $grid = $('#tbVentasProducto');
+                var totalVta = $grid.jqGrid('getCol', 'TotalVenta', false, 'sum');
+                var totalCosto = $grid.jqGrid('getCol', 'TotalCosto', false, 'sum');
+                var totalMrgen = $grid.jqGrid('getCol', 'Margen', false, 'avg');
+                var totalEst = $grid.jqGrid('getCol', 'MargenEstandarizado', false, 'sum');
+                $grid.jqGrid('footerData', 'set', {
+                    'OcrCode3': 'TOTALES: ',
+                    'TotalVenta': totalVta,
+                    'TotalCosto': totalCosto,
+                    'Margen': totalMrgen,
+                    'MargenEstandarizado': totalEst
+                });
+            }
+        });
+
+        function editLink(cellValue, options, rowdata, action) {
+            return "<a data-id='" + rowdata.ItemCode +"' onclick=\"doSomethingElse(this.getAttribute('data-id'));\" href='#'>" + rowdata.ItemCode + "</a>";
+        }
+    }
+
+    function doSomethingElse(id) {
+        event.preventDefault();
+
+		var params = new Object();
+        //params.itemCode = $(event).data("id");
+        params.itemCode = id;
+		params.slpCode = null;
+		params.cardCode = '@filtros.CardCode';
+		params.sucursal = '@filtros.Sucursal';
+		params.desde = $('#_desde').val();
+		params.hasta = $('#_hasta').val();
+		params.divisionx = '@filtros.Divisionx';
+		params.subdivisionx = '@filtros.Subdivisionx';
+		params.lineax = '@filtros.Lineax';
+		params.moneda = '@filtros.Moneda';
+
+		//debugger;
+        var urlContent = '@(Url.Content("~/"))';
+        var gridData;
+
+		$.ajax({
+            type: "GET",
+            url: '@Url.Action("Details", "VentasCliente")',
+            data: params,
+            datatype: "html",
+            success: function (data) {
+
+                //$('#detail').html(data);
+                gridData = data;
+
+                for (var i = 0; i < gridData.length; i++) {
+                    var obj = gridData[i];
+
+                    console.log(obj.ItemCode);
+                }
+
+                $('.nav-tabs a[href="#tab3primary"]').tab('show');
+                tabActiva = "tab3";
+
+		    }, error: function (XMLHttpRequest, textStatus, errorThrown) {
+			    console.log(textStatus + ": " + XMLHttpRequest.responseText);
+		    }
+        });
+
+        //var g = $("#tbVentasDetalle");
+        //g.setGridParam({ data: gridData });
+        //g[0].refreshIndex();
+        //g.trigger("reloadGrid");
+
+    }
+
+</script>
+
+<link href="~/Assets/css/tableStyle.css" rel="stylesheet" type="text/css" />
+
+<ol class="breadcrumb">
+	<li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+	<li><a href="~/VentasCliente"><i class="fa fa-users ibread"></i>Ventas por Cliente</a></li>
+	<li class="active"><i class="fa fa-file ibread"></i>Detalle de Venta</li>
+</ol>
+
+<div class="row">
+
+	<div class="col-md-12">
+		<section class="panel">
+			<header class="panel-heading" style="height:48px">
+				<b>Detalle de Venta</b>
+			</header>
+			<div class="panel-body">
+				<div class="form-horizontal">
+					<div>
+						<div class="col-md-6" style="width:100%">
+							<div class="panel with-nav-tabs panel-primary" style="width:auto">
+								<div class="panel-heading">
+									<ul class="nav nav-tabs">
+										<li id="tab1" class="active"><a href="#tab1primary" data-toggle="tab">Por Producto</a></li>
+										<li id="tab2"><a href="#tab2primary" data-toggle="tab">Por vendedor</a></li>
+										<li id="tab3"><a href="#tab3primary" data-toggle="tab">Detalle</a></li>
+									</ul>
+								</div>
+
+
+								<div>
+									<input type="hidden" id="_hasta" />
+									<input type="hidden" id="_desde" />
+									<input type="hidden" id="_tab" />
+								</div>
+
+								<div class="panel-body">
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade in active" id="tab1primary">
+                                            <div class="panel-body">
+                                                <div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+                                                    <div class="tableview tableview-has-footer">
+                                                        <div class="tableview-holder">
+
+                                                            <table id="tbVentasProducto">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <td id="ph101" caption="#" class="texto-centrado"></td>
+                                                                        <td id="ph102" caption="Código" class="texto-centrado"></td>
+                                                                        <td id="ph103" caption="Nombre del Producto" class="texto-centrado"></td>
+                                                                        <td id="ph104" caption="Linea" class="texto-centrado"></td>
+                                                                        <td id="ph105" caption="Cantidad" class="texto-centrado"></td>
+                                                                        <td id="ph106" caption="Venta Unit" class="texto-centrado"></td>
+                                                                        <td id="ph107" caption="Venta" class="texto-centrado"></td>
+                                                                        @if (!esVendedor)
+                                                                        {
+                                                                            <td id="ph108" caption="Costo Unit" class="texto-centrado"></td>
+                                                                            <td id="ph109" caption="Compra" class="texto-centrado"></td>
+                                                                            <td id="ph110" caption="Margen" class="texto-centrado"></td>
+                                                                            <td id="ph111" caption="Venta estandarizada" class="texto-centrado"></td>
+                                                                        }
+                                                                    </tr>
+                                                                </thead>
+
+                                                                @if (datalista != null)
+                                                                {
+                                                                    <tbody>
+                                                                        @{int i = 1;}
+                                                                        @foreach (var item in datalista)
+                                                                        {
+                                                                            <tr>
+                                                                                <td class="id texto-centrado">@i</td>
+                                                                                <td class="id texto-centrado">
+                                                                                    <a class="hrefAbrirDetalle_CodeProduct" href="" data-id="@item.ItemCode">@item.ItemCode</a>
+                                                                                </td>
+                                                                                <td class="descrip">@item.Description</td>
+                                                                                <td class="texto-centrado">@item.OcrCode3</td>
+                                                                                <td class="db_name texto-centrado">@item.Quantity </td>
+                                                                                <td class="db_name texto-centrado">@item.VentaUnit.ToString("N2") </td>
+                                                                                <td class="db_name">@item.TotalVenta.ToString("N2")</td>
+                                                                                @if (!esVendedor)
+                                                                                {
+                                                                                    <td class="db_name texto-centrado">@item.CostoUnit.ToString("N2")</td>
+                                                                                    <td class="db_name">@item.TotalCosto.ToString("N2")</td>
+
+                                                                                    <td class="db_name">@item.Margen.ToString("N2")% </td>
+                                                                                    <td class="db_name">@item.MargenEstandarizado.ToString("N2") </td>
+                                                                                }
+                                                                            </tr>			i++;
+                                                                        }
+                                                                    </tbody>
+
+                                                                    <tfoot>
+                                                                        <tr>
+                                                                            <td class="id texto-centrado" colspan="6"><div class="fixed">Totales</div></td>
+                                                                            <td class="db_name texto-centrado"><div class="fixed">@totales.TotalVentas.ToString("N2")</div></td>
+
+                                                                            @if (!esVendedor)
+                                                                            {
+                                                                                <td></td>
+                                                                                <td class="db_name texto-centrado"><div class="fixed">@totales.TotalCompras.ToString("N2")</div></td>
+                                                                                <td class="db_name texto-centrado"><div class="fixed">@totales.TotalMargen.ToString("N2")% </div></td>
+                                                                                <td class="db_name texto-centrado"><div class="fixed">@totales.TotalMargenEstandarizado.ToString("N2")</div> </td>
+                                                                            }
+                                                                        </tr>
+
+                                                                    </tfoot>
+
+                                                                            }
+                                                            </table>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @*<table id="tbVentasProducto"></table>
+                    @if (datalista != null)
+                    {
+                        for (int i = 0; i < datalista.Count; i++)
+                        {
+                            <script>
+                                $(document).ready(function () {
+                                     var ic = '@datalista[i].ItemCode'
+                                     var ds = '@datalista[i].Description';
+                                     var c3 = '@datalista[i].OcrCode3';
+                                     var qu = '@datalista[i].Quantity';
+                                     var vu = '@datalista[i].VentaUnit';
+                                     var tv = '@datalista[i].TotalVenta';
+                                     var cu = '@datalista[i].CostoUnit';
+                                     var tc = '@datalista[i].TotalCosto';
+                                     var mr = '@datalista[i].Margen';
+                                     var me = '@datalista[i].MargenEstandarizado';
+
+                                     var myData = [{
+                                         ItemCode:  ic, Description:    ds,
+                                         OcrCode3:  c3, Quantity:       qu,
+                                         VentaUnit: vu, TotalVenta:     tv,
+                                         CostoUnit: cu, TotalCosto:     tc,
+                                         Margen: mr, MargenEstandarizado: me
+                                     }];
+
+                                     jQuery("#tbVentasProducto").jqGrid('addRowData', @(i + 1), myData[0]);
+                                 });
+                            </script>
+                        }
+                    }*@
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="tab2primary">
+                                            <div class="panel-body">
+                                                <div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+                                                    <div class="tableview tableview-has-footer">
+                                                        <div class="tableview-holder">
+                                                            <table id="tbVentasVendedor">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <td id="ph201" caption="#"> </td>
+                                                                        <td id="ph202" caption="Nombre del vendedor" class="texto-centrado"></td>
+                                                                        <td id="ph203" caption="Cantidad" class="texto-centrado"></td>
+                                                                        <td id="ph204" caption="Venta" class="texto-centrado"></td>
+                                                                        @if (!esVendedor)
+                                                                        {
+                                                                            <td id="ph205" caption="Compra" class="texto-centrado"></td>
+                                                                            <td id="ph206" caption="Margen" class="texto-centrado"></td>
+                                                                            <td id="ph207" caption="Venta estandarizada" class="texto-centrado"></td>}
+                                                                    </tr>
+                                                                </thead>
+
+                                                                @if (datalistaPorVendedor != null)
+                                                                {
+                                                                    <tbody>
+                                                                        @{int i = 1;}
+                                                                        @foreach (var item in datalistaPorVendedor)
+                                                                        {
+                                                                            <tr>
+                                                                                <td class="id texto-centrado">@i</td>
+                                                                                <td class="descrip">
+                                                                                    <a class="hrefAbrirDetalle_CodeVendedor" href="" data-idslp="@item.SlpCode">@item.SlpName</a>
+                                                                                </td>
+                                                                                <td class="db_name texto-centrado">@item.Quantity</td>
+                                                                                <td class="db_name">@item.TotalVenta.ToString("N2")</td>
+                                                                                @if (!esVendedor)
+                                                                                {
+                                                                                    <td class="db_name">@item.TotalCosto.ToString("N2")</td>
+                                                                                    <td class="db_name">@item.Margen.ToString("N2")%</td>
+                                                                                    <td class="db_name">@item.MargenEstandarizado.ToString("N2")</td>}
+                                                                            </tr>			i++;
+                                                                        }
+                                                                    </tbody>
+                                                                    <tfoot>
+                                                                        <tr>
+                                                                            <td class="id texto-centrado" colspan="3"><div class="fixed">Totales</div></td>
+                                                                            <td class="db_name texto-centrado"><div class="fixed">@totales.TotalVentas.ToString("N2")</div></td>
+
+                                                                            @if (!esVendedor)
+                                                                            {
+                                                                                <td class="db_name texto-centrado"><div class="fixed">@totales.TotalCompras.ToString("N2")</div></td>
+                                                                                <td class="db_name texto-centrado"><div class="fixed">@totales.TotalMargen.ToString("N2")%</div> </td>
+                                                                                <td class="db_name texto-centrado"><div class="fixed">@totales.TotalMargenEstandarizado.ToString("N2")</div></td>}
+
+                                                                        </tr>
+
+                                                                    </tfoot>
+
+                                                                            }
+
+
+
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+										</div>
+										<div class="tab-pane fade" id="tab3primary">
+											<div class="panel-body table-responsive">
+
+                                                <div id="detail">
+                                                    @Html.Partial("Details")
+                                                </div>
+                                            </div>
+										</div>
+									</div>
+
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</section>
+
+	</div>
+
+
+</div>
+
+<button type="button" id="frmProdB" style="display:none"
+		onclick="javascript:volver()">
+	Volver
+</button>
+
+<button type="button" id="frmProdExp" style="display:none">
+	Exportar
+</button>

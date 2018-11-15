@@ -1,0 +1,162 @@
+﻿@{
+    ViewBag.Title = "Importar";
+
+    ViewBag.Save = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.SaveAction = "btnImpSave";
+    ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.BackAction = "frmUsrB";
+}
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li><a href="~/Usuario"><i class="fa fa-users ibread"></i>Usuarios</a></li>
+    <li class="active"><i class="fa fa-upload ibread"></i>Importar</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Importar usuarios</b> 
+            </header> 
+            
+            <div class="panel-body">
+
+                <span style="margin-left:10px">Seleccione el archivo desde donde se importarán los datos de los usuarios.</span>    
+
+                <div class="row" style="margin:10px">
+                    @using (Html.BeginForm("UploadFile", "Usuario", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-xs-6">
+                            <input class="btn btn-default" type="file" name="UploadedFile" id="fileLoadDoc" accept=".xlsx" />
+                        </div>
+                            
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-xs-6">
+                            <input class="btn btn-primary btn-md" value="Procesar" id="procesar" type="submit"/>
+                        </div>
+                    }
+                </div>
+                <div class="row" style="margin:10px">
+                    <div class="col-lg-12" style="padding-bottom:36px">
+                            @Html.Partial("UploadFile")
+                    </div>
+                </div>
+
+             </div>
+        </section>
+    </div>
+    
+</div>
+
+
+<div class="row">
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        <button id="btnImpSave" type="submit" class="btn btn-primary btn-lg" style="width:300px;display:none">Guardar</button>
+        <button type="button" id="frmUsrB" style="display:none" onclick="location.href='@Url.Action("Index", "Usuario")'">Volver</button>
+    </div>
+    <div class="col-md-4"></div>
+</div>
+
+<script>
+
+    $(function () {
+        $("#btnImpSave").on('click', function () {
+
+            bootbox.confirm({
+                title: "Importar usuarios",
+                message: "Se importarán los usuarios, tenga en cuenta que no se registrarán los que no cuenten con datos correctos. ¿Continuar?",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Registrar'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+
+                        var appendInit = '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> ';
+                        var appendFin = '</div>';
+                        var errors = [];
+
+                        var dialog = bootbox.dialog({
+                            message: appendInit + 'Registrando usuarios...' + appendFin,
+                            closeButton: false
+                        });
+
+                        var rows = $('#tbUsers tr').length;
+                        var currIndex = 0;
+                        $('#tbUsers tr').each(function (index, element) {
+                            var validate = $(this).find(".usr_val").html();
+                            currIndex = index;
+
+                            if (validate != null) {
+                                if (validate.trim() == 'Datos correctos') {
+
+                                    var nombre = $(this).find(".usr_nom").html();
+                                    var cuenta = $(this).find(".usr_cue").html();
+                                    var passwr = $(this).find(".usr_pwd").html();
+                                    var email = $(this).find(".usr_ema").html();
+                                    var fecReg = $(this).find(".usr_fec").html();
+                                    var usrSap = $(this).find(".usr_sap").html();
+                                    var usrRol = $(this).find(".usr_rol").html();
+                                    var emprsa = $(this).find(".usr_emp").html();
+                                    var ccosto = $(this).find(".usr_cco").html();
+
+                                    dialog.find('.bootbox-body').html(appendInit + 'Registrando a ' + nombre + appendFin);
+
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: '@(Url.Content("~/"))' + 'usuario/GuardarFromExcel',
+                                        data: {
+                                            nombre: nombre,
+                                            cuenta: cuenta,
+                                            password: passwr,
+                                            correo: email,
+                                            fecReg: fecReg,
+                                            codSAP: usrSap,
+                                            rol: usrRol,
+                                            empresa: emprsa,
+                                            ccosto: ccosto
+                                        },
+                                        success: function (r) {
+                                            if (r.respuesta) {
+                                                dialog.find('.bootbox-body').html(appendInit + 'Registrado');
+                                            } else {
+                                                errors.push(nombre + ', ' + r.error);
+                                            }
+
+                                            if (index === (rows - 1)) {
+                                                dialog.modal('hide');
+                                                if (errors.length > 0)
+                                                    notificacion(1, errors.join('\n'))
+                                                else
+                                                    notificacion(0, 'Usuarios registrados con éxito');
+                                            }
+                                        },
+                                        error: function (jqXHR, textStatus, errorThrown) {
+                                            dialog.modal('hide');
+                                            notificacion(1, errorThrown);
+                                        }
+                                    });
+                                } else {
+                                    if (index === (rows - 1)) {
+                                        dialog.modal('hide');
+                                        if (errors.length > 0)
+                                            notificacion(1, errors.join('\n'))
+                                        else
+                                            notificacion(0, 'Usuarios registrados con éxito');
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
+
+</script>

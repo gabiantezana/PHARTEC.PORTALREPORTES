@@ -1,0 +1,478 @@
+﻿@model Model.Usuario
+
+@{
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Usuario");
+    TempData["clicked"] = permisos.Menu_id;
+
+    ViewBag.Save = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.New = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.SaveAction = "btnUserSave";
+    ViewBag.BackAction = "frmUsrB";
+
+    if (Model.id > 0)
+    {
+        ViewBag.Cancel = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Back = Casuarinas.Helpers.Constantes.DISABLED;
+    }
+    else
+    {
+        ViewBag.Back = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.Cancel = Casuarinas.Helpers.Constantes.DISABLED;
+    }
+
+    ViewBag.Title = (Model.id > 0 ? Model.nombre : "Nuevo registro");
+    List<Model.Sucursal> allSucursales = ViewBag.Sucursales;
+    List<Model.Division> allDivisiones = ViewBag.Divisiones;
+    List<Model.SubDivision> allSubdivisiones = ViewBag.Subdivisiones;
+    List<Model.Linea> allLineas = ViewBag.Lineas;
+    List<Casuarinas.Helpers.AuthorizationItem> authorizedItems = ViewBag.AuthorizedItems;
+    List<Casuarinas.Helpers.AuthorizationItem> authorizedClients = ViewBag.AuthorizedClients;
+
+}
+
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li><a href="~/Usuario"><i class="fa fa-users ibread"></i>Usuarios</a></li>
+    <li class="active"><i class="fa fa-file ibread"></i>@(Model.id > 0 ? Model.nombre : "Nuevo registro")</li>
+</ol>
+
+@using (Html.BeginForm("Guardar", "Usuario", FormMethod.Post, new { id = "frm-usuario" }))
+{
+    if (ViewData["alert"] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro actualizado con éxito");
+            });
+        </script>
+    }
+
+    @Html.HiddenFor(u => u.id)
+    <div class="panel panel-default" id="parentIP">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentIP" href="#divIP"><i class="fa fa-user" aria-hidden="true"></i> Información personal</a>
+        </div>
+        <div id="divIP" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="form-group">
+                    @Html.LabelFor(u => u.nombre, "Nombre completo")
+                    @Html.TextBoxFor(u => u.nombre, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(u => u.nombre, null, new { @class = "label label-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(u => u.cuentaWeb, "Cuenta web")
+                    @(Model.id > 0 ?
+                                                                                                                    @Html.TextBoxFor(u => u.cuentaWeb, new { @class = "form-control", @readonly = "readonly" }) :
+                                                                                                                    @Html.TextBoxFor(u => u.cuentaWeb, new { @class = "form-control" }))
+
+
+                    @Html.ValidationMessageFor(u => u.cuentaWeb, null, new { @class = "label label-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(u => u.passWeb, "Contraseña")
+                    @(Model.id > 0 ?
+                                                                                                                       Html.TextBoxFor(u => u.passWeb, new { @class = "form-control", @type = "password", @readonly = "readonly" }) :
+                                                                                                                       Html.TextBoxFor(u => u.passWeb, new { @class = "form-control", @type = "password" }))
+                    @Html.ValidationMessageFor(u => u.passWeb, null, new { @class = "label label-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(u => u.correo, "Correo electrónico")
+                    @Html.TextBoxFor(u => u.correo, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(u => u.correo, null, new { @class = "label label-danger" })
+                </div>
+                <div class="row">
+                    <div class="col-sm-2 col-xs-3">
+                        @Html.LabelFor(u => u.Rol_id, "Rol")
+                    </div>
+                    <div class="col-sm-4 col-xs-15">
+                        <div style="float:left">
+                            @Html.DropDownList("Rol_id", null, null, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(u => u.Rol_id, null, new { @class = "label label-danger" })
+                        </div>
+                    </div>
+                    <div class="col-sm-2 col-xs-3">
+                        @Html.LabelFor(u => u.estado, "Estado")
+                    </div>
+                    <div class="col-sm-4 col-xs-15">
+                        <div style="float:left">
+                            @Html.DropDownList("Estado", null, null, new { @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+                <br />
+
+                <div id="div_codigo_sap" class="form-group">
+                    @Html.LabelFor(u => u.codigo_sap, "Usuario vendedor Sap")
+
+                    @Html.DropDownList("codigo_sap", null, null, new { @class = "form-control" })
+                    @*@Html.TextBoxFor(u => u.codigo_sap, new { @class = "form-control" })*@
+
+                    @Html.ValidationMessageFor(u => u.codigo_sap, null, new { @class = "label label-danger" })
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default" id="parentSuc">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentSuc" href="#divSuc">
+                <i class="fa fa-hospital-o" aria-hidden="true"></i> Sucursales
+            </a>
+        </div>
+        <div id="divSuc" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in allSucursales)
+                    {
+                        var elegido = false;
+                        foreach (var u in Model.Sucursales)
+                        {
+                            if (item.Id == u.Id)
+                            {
+                                elegido = true;
+                                break;
+                            }
+                        }
+                        <div class="col-xs-6 col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-addon">
+                                    <input type="checkbox" @(elegido ? "checked" : "") name="sucursales_seleccionadas" value="@item.Id" />
+                                </span>
+                                <input type="text" class="form-control" value="@item.descripcion" disabled="disabled">
+                            </div>
+                        </div>
+                    }
+                </div>
+                <br />
+
+                <div class="row">
+                    <div class="col-md-8">
+                        @Html.ValidationMessage("sucursales-elegidas", new { @class = "label label-danger", id = "sucursales-validacion" })
+                        @*@Html.ValidationMessage("Usuario", new { @class = "label label-danger", id = "sucursales" })*@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--Divisiones-->
+    <div class="panel panel-default" id="parentDiv">
+
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentDiv" href="#divDiv">
+                <i class="fa fa-folder" aria-hidden="true"></i> Divisiones
+            </a>
+        </div>
+        <div id="divDiv" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in allDivisiones)
+                    {
+                        var elegido = false;
+                        foreach (var d in Model.Divisiones)
+                        {
+                            if (item.Id == d.Id)
+                            {
+                                elegido = true;
+                                break;
+                            }
+                        }
+                        <div class="col-xs-6 col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-addon">
+                                    <input type="checkbox" @(elegido ? "checked" : "") name="divisiones_seleccionadas" value="@item.Id" />
+                                </span>
+                                <input type="text" class="form-control" value="@item.descripcion" disabled="disabled" />
+                            </div>
+                        </div>
+                    }
+
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-8">
+                        @Html.ValidationMessage("divisiones-elegidas", new { @class = "label label-danger", id = "divisiones-validacion" })
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!--SubDivisiones-->
+    <div class="panel panel-default" id="parentSub">
+
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentSub" href="#divSub">
+                <i class="fa fa-folder" aria-hidden="true"></i> Subdivisiones
+            </a>
+        </div>
+        <div id="divSub" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in allSubdivisiones)
+                    {
+                        var elegido = false;
+                        foreach (var d in Model.Subdivisiones)
+                        {
+                            if (item.Id == d.Id)
+                            {
+                                elegido = true;
+                                break;
+                            }
+                        }
+                        <div class="col-xs-6 col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-addon">
+                                    <input type="checkbox" @(elegido ? "checked" : "") name="subdivisiones_seleccionadas" value="@item.Id" />
+                                </span>
+                                <input type="text" class="form-control" value="@item.descripcion" disabled="disabled" />
+                            </div>
+                        </div>
+                    }
+
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-8">
+                        @Html.ValidationMessage("subdivisiones-elegidas", new { @class = "label label-danger", id = "subdivisiones-validacion" })
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!--Líneas-->
+    <div class="panel panel-default" id="parentLin">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentLin" href="#divLin"><i class="fa fa-folder" aria-hidden="true"></i> Líneas </a>
+        </div>
+        <div id="divLin" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in allLineas)
+                    {
+                        var elegido = false;
+                        foreach (var u in Model.Lineas)
+                        {
+                            if (item.Id == u.Id)
+                            {
+                                elegido = true;
+                                break;
+                            }
+                        }
+                        <div class="col-xs-6 col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-addon">
+                                    <input type="checkbox" @(elegido ? "checked" : "") name="lineas_seleccionadas" value="@item.Id" />
+                                </span>
+                                <input type="text" class="form-control" value="@item.descripcion" disabled="disabled">
+                            </div>
+                        </div>
+                    }
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-8">
+                        @Html.ValidationMessage("lineas-elegidas", new { @class = "label label-danger", id = "lineas-validacion" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--Authorized Items-->
+    <div class="panel panel-default" id="parentPermisoArticulos">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentPermisoArticulos" href="#divArticulos"><i class="fa fa-folder" aria-hidden="true"></i> Permiso de visualización de artículos </a>
+        </div>
+        <div id="divArticulos" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <table class="table table-fixed table-condensed table-striped scroll">
+                    <thead class="text-bold badge-inverse">
+                        <tr>
+                            <td>ItemCode</td>
+                            <td>ItemName</td>
+                            <td><input type="checkbox"  class="checkAll" data-parentcheckfor="checkItem" />&nbsp; Habilitar todos  </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in authorizedItems)
+                        {
+                            <tr>
+                                <td>@item.Code</td>
+                                <td>@item.Name</td>
+                                <td>
+                                    <input type="checkbox" @(item.HasAuthorization ? "checked" : "") class="checkItem" name="chk-AuthorizedItems-@item.Code" value="@item.Code" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <br />
+            </div>
+        </div>
+    </div>
+    <!--Authorized Clients-->
+
+    <div class="panel panel-default" id="parentPermisoClientes">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentPermisoClientes" href="#divClientes"><i class="fa fa-folder" aria-hidden="true"></i> Permiso de visualización de clientes </a>
+        </div>
+        <div id="divClientes" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <table class="table table-fixed table-condensed table-striped scroll">
+                    <thead class="text-bold badge-inverse">
+                        <tr>
+                            <td>CardCode</td>
+                            <td>CardName</td>
+                            <td><input type="checkbox" class="checkAll" data-parentcheckfor="checkClient" />&nbsp; Habilitar todos  </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in authorizedClients)
+                        {
+                            <tr>
+                                <td>@item.Code</td>
+                                <td>@item.Name</td>
+                                <td>
+                                    <input type="checkbox" @(item.HasAuthorization ? "checked" : "") class="checkClient" name="chk-AuthorizedClients-@item.Code" value="@item.Code" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <br />
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <button id="btnUserSave" type="submit" class="btn btn-primary btn-lg" style="width:300px;display:none">Guardar</button>
+            <button type="button" id="frmUsrB" style="display:none" onclick="location.href='@Url.Action("Index","Usuario")'">Volver</button>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+}
+
+<style>
+    .scroll {
+        border: 0;
+        border-collapse: collapse;
+    }
+        .scroll tr {
+            display: flex;
+        }
+        .scroll td {
+            padding: 3px;
+            flex: 1 auto;
+            width: 1px;
+            word-wrap: break;
+        }
+        .scroll thead tr:after {
+            content: '';
+            overflow-y: scroll;
+            visibility: hidden;
+            height: 0;
+        }
+        .scroll thead th {
+            flex: 1 auto;
+            display: block;
+        }
+        .scroll tbody {
+            display: block;
+            width: 100%;
+            overflow-y: auto;
+            height: 200px;
+        }
+</style>
+
+<script>
+
+    $(".checkAll").change(function () {
+        var parentCheckFor = $(this).data("parentcheckfor");
+        $("."+ parentCheckFor).prop('checked', $(this).prop("checked"));
+        debugger;
+    });
+
+    $(document).ready(function () {
+
+
+		//$("#Rol_id").selectmenu();
+		//$("#Estado").selectmenu();
+
+		//debugger;
+		if ($('#Rol_id').val() == 2) {
+			$('#div_codigo_sap').show();
+		} else {
+			$('#div_codigo_sap').hide();
+		}
+
+
+
+        $("#frm-usuario").submit(function () {
+            var form = $(this);
+
+            var filter = /^[a-zA-Z0-9_.-]+@@[a-zA-Z0-9]+[a-zA-Z0-9.-]+[a-zA-Z0-9]+.[a-z]{0,4}$/;
+
+            if (!filter.test($('#correo').val())) {
+                notificacion(1, 'Debe ingresar un correo electrónico válido');
+                return false;
+            } else {
+                if (form.validate()) {
+
+                    var dialog = bootbox.dialog({
+                        message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Guardando...</div>',
+                        closeButton: false
+                    });
+
+                    form.ajaxSubmit({
+                        dataType: 'JSON',
+                        type: 'POST',
+                        url: form.attr('action'),
+                        success: function (r) {
+                            dialog.modal('hide');
+                            if (r.respuesta) {
+                                window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                            } else {
+                                if (r.error != "") {
+                                    notificacion(1, r.error);
+                                }
+
+                                if (r.error2 != "") {
+                                    notificacion(1, r.error);
+                                }
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            dialog.modal('hide');
+                            notificacion(1, errorThrown);
+                        }
+                    });
+                }
+            }
+            return false;
+		});
+
+
+		$('#Rol_id').change(function () {
+			if ($('#Rol_id').val() == 2) {
+				$('#div_codigo_sap').show();
+			} else {
+				$('#div_codigo_sap').hide();
+			}
+		});
+
+
+
+
+
+
+    })
+
+
+
+</script>

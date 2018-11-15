@@ -1,0 +1,42 @@
+﻿@model Model.Usuario
+
+@foreach (var e in ViewBag.Empresas)
+{
+    var print = false;
+    foreach (var item in ViewBag.CentrosCosto)
+    {
+        if (item.Empresa_id == e.id)
+        {
+            print = true;
+        }
+    }
+    
+    if(print){
+      <div class="col-md-6">
+            <div class="panel panel-default">
+            <div class="panel-heading">@e.descripcion</div>
+                <select name="centroscosto_seleccionados" multiple class="list-group" id="@e.id" style="width:100%">
+                @foreach (var c in ViewBag.CentrosCosto)
+                {
+                    if (c.Empresa_id == e.id)
+                    {
+                        var elegido = false;
+                        if(ViewData.Model != null){
+                            foreach (var u in ViewData.Model.CentrosCosto)
+                            {
+                                if (c.id == u.id)
+                                {
+                                    elegido = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        <option value="@c.id"  @(elegido ? "selected" : "") class="list-group-item">@c.descripcion</option>
+                    }
+                }
+                </select>
+            </div>
+       </div>
+    }
+}

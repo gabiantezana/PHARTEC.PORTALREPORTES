@@ -1,0 +1,32 @@
+﻿@model List<Model.Notificacion>
+
+@if(Model.Count > 0){
+    foreach (var n in Model)
+    {
+        <li class="custom-item-dropdown">
+            <a href="@Url.Action(n.action, n.controller, new { id = n.referencia, nId = n.id, type = n.tipo })">
+                <div class="pull-left">
+                    <img src="~/Assets/img/user_profile.png" class="img-circle" alt="User Image" />
+                </div>
+                <h4>
+                    <label style="width:80%"> @n.from_user_nom  </label>
+                    <small style="width:20%"><i class="fa fa-clock-o"></i>@string.Format("{0:HH:mm}", n.fecha_registro)</small>
+                </h4>
+                <p>@n.descripcion</p>
+            </a>
+        </li>
+    }
+}
+<style>
+    .navbar-nav > .messages-menu > .dropdown-menu > li .menu > li.custom-item-dropdown > a > h4 > small
+    {
+        position: relative;
+        top: -1px;
+        float: none;
+    }
+    .navbar-nav > .messages-menu > .dropdown-menu > li .menu > li.custom-item-dropdown > a > p
+    {
+        overflow: hidden;
+        margin-right: 6px;
+    }
+</style>

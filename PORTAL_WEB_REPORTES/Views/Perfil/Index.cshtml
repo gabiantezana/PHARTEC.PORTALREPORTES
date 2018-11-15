@@ -1,0 +1,289 @@
+﻿@model Model.Usuario
+
+@{
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Perfil");
+    TempData["clicked"] = permisos.Menu_id;
+
+    ViewBag.Save = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.New = Casuarinas.Helpers.Constantes.DISABLED;
+    ViewBag.SaveAction = "btnUserSave";
+    ViewBag.BackAction = "frmUsrB";
+
+    ViewBag.Title = "Mi Perfil";
+}
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-user ibread"></i>Mi Perfil</li>
+</ol>
+
+@using (Html.BeginForm("Actualizar", "Perfil", FormMethod.Post, new { id = "frm-usuario" }))
+{
+    if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Datos guardados con éxito");
+            });
+        </script>
+    }
+
+    @Html.HiddenFor(u => u.id)
+    @Html.HiddenFor(u => u.Rol_id)
+    @Html.HiddenFor(u => u.estado)
+    @Html.HiddenFor(u => u.passWeb)
+    <div class="panel panel-default" id="parentIP">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentIP" href="#divIP"><i class="fa fa-user" aria-hidden="true"></i> Información personal</a>
+        </div>
+        <div id="divIP" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(u => u.Rol_id, "Rol")
+                        @Html.DropDownList("Rol_id", null, null, new { @class = "form-control", @disabled = "disabled" })
+                        @Html.ValidationMessageFor(u => u.Rol_id, null, new { @class = "label label-danger" })
+                    </div>
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(u => u.nombre, "Nombre completo")
+                        @Html.TextBoxFor(u => u.nombre, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(u => u.nombre, null, new { @class = "label label-danger" })
+                    </div>
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(u => u.cuentaWeb, "Usuario web")
+                        @Html.TextBoxFor(u => u.cuentaWeb, new { @class = "form-control", @disabled = "disabled" })
+                        @Html.ValidationMessageFor(u => u.cuentaWeb, null, new { @class = "label label-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(u => u.passWeb, "Contraseña")
+                        <div class="input-group m-b-10">
+                            @Html.TextBoxFor(u => u.passWeb, new { @class = "form-control", @type = "password", @disabled = "disabled" })
+                            <span class="input-group-btn">
+                                <button id="btnEditPass" data-placement="top" data-toggle="tooltip" class="btn btn-primary tooltips" data-original-title="Cambiar" type="button">
+                                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                                </button>
+                            </span>
+                        </div>
+                        @Html.ValidationMessageFor(u => u.passWeb, null, new { @class = "label label-danger" })
+                    </div>
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(u => u.correo, "Correo electrónico")
+                        @Html.TextBoxFor(u => u.correo, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(u => u.correo, null, new { @class = "label label-danger" })
+                    </div>
+                    <div class="form-group col-md-4">
+                        @Html.LabelFor(u => u.fechaRegistro, "Fecha de registro")
+                        @Html.TextBoxFor(u => u.fechaRegistro, new { @class = "form-control", @disabled = "disabled" })
+                        @Html.ValidationMessageFor(u => u.fechaRegistro, null, new { @class = "label label-danger" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--Sucursales asignadas-->
+    <div class="panel panel-default" id="parentSuc">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentSuc" href="#divSuc"><i class="fa fa-hospital-o" aria-hidden="true"></i> Sucursales asignadas </a>
+        </div>
+        <div id="divSuc" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in Model.Sucursales)
+                    {
+                        <div class="col-xs-6 col-md-4">
+                            <input type="text" class="form-control" value="@item.descripcion" disabled="disabled">
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--Divisiones asignadas-->
+    <div class="panel panel-default" id="parentDiv">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentDiv" href="#divDiv"><i class="fa fa-folder" aria-hidden="true"></i> Divisiones  asignadas </a>
+        </div>
+        <div id="divDiv" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in Model.Divisiones)
+                    {
+                        <div class="col-xs-6 col-md-4">
+                            <input type="text" class="form-control" value="@item.descripcion" disabled="disabled">
+
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--Subdivisiones asignadas-->
+    <div class="panel panel-default" id="parentSubDiv">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentSubDiv" href="#divSubDiv"><i class="fa fa-folder" aria-hidden="true"></i> Subdivisiones  asignadas</a>
+        </div>
+        <div id="divSubDiv" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in Model.Subdivisiones)
+                    {
+                        <div class="col-xs-6 col-md-4">
+                            <input type="text" class="form-control" value="@item.descripcion" disabled="disabled">
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--Líneas asignadas-->
+    <div class="panel panel-default" id="parentLin">
+        <div class="panel-heading">
+            <a data-toggle="collapse" data-parent="#parentLin" href="#divLin"><i class="fa fa-folder" aria-hidden="true"></i> Líneas  asignadas </a>
+        </div>
+        <div id="divLin" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="row">
+                    @foreach (var item in Model.Lineas)
+                    {
+                        <div class="col-xs-6 col-md-4">
+                            <input type="text" class="form-control" value="@item.descripcion" disabled="disabled">
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <button id="btnUserSave" type="submit" class="btn btn-primary btn-lg" style="width:300px;display:none">Guardar</button>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+
+}
+
+
+<!-- Modal Cambio password-->
+<div class="modal fade" id="modalPass" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">Cambiar contraseña</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form" class="form-horizontal" style="margin-right:10px; margin-top:10px">
+                    <input type="hidden" id="ItemTid" />
+                    <div class="form-group">
+                        <label class="control-label col-sm-5" for="ItemTip">Contraseña actual:</label>
+                        <div class="col-sm-7">
+                            <input id="Pass" class="form-control" type="password" placeholder="Ingrese la contraseña actual">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-5" for="ItemCod">Nueva contraseña:</label>
+                        <div class="col-sm-7">
+                            <input id="NewPass1" class="form-control" type="password" placeholder="Ingrese la nueva contraseña">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-5" for="ItemDes">Repita la nueva contraseña:</label>
+                        <div class="col-sm-7">
+                            <input id="NewPass2" type="password" class="form-control" placeholder="Repita la nueva contraseña">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+                <button id="btnModalSave" type="button" class="btn btn-primary" data-loading-text="Guardando...">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+
+        $("#frm-usuario").submit(function () {
+            var form = $(this);
+
+            if (form.validate()) {
+                form.ajaxSubmit({
+                    dataType: 'JSON',
+                    type: 'POST',
+                    url: form.attr('action'),
+                    success: function (r) {
+                        if (r.respuesta) {
+                            window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                        } else {
+                            notificacion(1, r.error);
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        notificacion(1, errorThrown);
+                    }
+                });
+            }
+
+            return false;
+        });
+
+        $("#btnEditPass").on('click', function () {
+            $('.modal-body #modal-form')[0].reset();
+            $('#modalPass').modal('show');
+        });
+
+        $("#btnModalSave").on('click', function () {
+
+            if ($('#Pass').val() === '' ||
+                $('#NewPass1').val() === '' ||
+                $('#NewPass2').val() === '') {
+                notificacion(1, 'Debe ingresar la contraseña actual y la nueva');
+            } else {
+                if ($('#NewPass1').val() === $('#NewPass2').val()) {
+
+                    var btn = $(this);
+                    btn.button('loading');
+                    setTimeout(function () {
+                        btn.button('reset')
+                    }, 12000);
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '@Url.Action("CambiarPassword","Perfil")',
+                        dataType: 'json',
+                        data: { actual: $("#Pass").val(), nueva: $("#NewPass1").val() },
+                        success: function (r) {
+                            $('#btnModalSave').button('reset');
+                            if (r.respuesta) {
+                                $('#modalPass').modal('hide');
+                                notificacion(0, 'Contraseña cambiada con éxito.');
+                            } else {
+                                notificacion(1, r.error);
+                            }
+                        },
+                        error: function (ex) {
+                            $('#btnModalSave').button('reset');
+                            notificacion(1, 'Failed.' + ex);
+                        }
+                    });
+
+                } else {
+                    notificacion(1, 'Las contraseñas no coinciden.');
+                }
+            }
+        });
+
+    });
+
+</script>

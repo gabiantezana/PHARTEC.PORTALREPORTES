@@ -1,0 +1,99 @@
+﻿@model List<Model.CentroCosto>
+
+@{
+    ViewBag.Title = "Centros de costo";
+    WebGrid wg = new WebGrid(Model, rowsPerPage: 10);
+    
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("CentroCosto");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE] != null)
+    {
+        <script type="text/javascript">
+            $(document).ready(function () {
+                notificacion(0, "Registro creado con éxito");
+            });
+        </script>
+    }
+}
+
+<script>
+
+    $(function () {
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+    });
+
+</script>
+
+<ol class="breadcrumb">
+   <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-cogs ibread"></i>Centros de costo</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Centros de costo</b> 
+            </header>
+            
+            <div class="panel-body">
+                
+                @using (@Html.BeginForm("Index", "CentroCosto", FormMethod.Get, new { @class = "form-search" }))
+                {
+                    <div class="row" style="margin-bottom:10px">
+                        <div class="col-xs-18 col-md-4">
+                            <div class="input-group">
+                                @Html.TextBox("search", null, new { @class = "form-control col-xs-4", @placeholder = "Buscar por descripción o empresa..." })
+                                <span class="input-group-btn">
+                                    <button type="submit" class="btn btn-primary">Buscar</button>
+                                </span>
+                                </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Count > 0)
+                {
+
+                    <div class="table-responsive">
+                        @wg.GetHtml(
+                            tableStyle: "table table-bordered table-hover dataTable no-footer dtr-inline",
+                            nextText: "Siguiente >",
+                            previousText: "< Anterior",
+                            columns: new[]{
+                                wg.Column("id",header:"ID", format: (item) => "CC" + item.id.ToString("D9"), style: "texto-centrado"),
+                                wg.Column("descripcion", header:"Descripción"),
+                                wg.Column("Empresa.descripcion", header: "Empresa"),
+                                wg.Column("codigoSap", header: "Código SAP"),
+                                wg.Column("estado", header : "Estado", format : (item) => item.estado.Equals("Y") || item.estado.Equals("A") ? "Activo" : "Inactivo", style: "texto-centrado"),
+                                wg.Column(null, null,format: 
+                                @<text>
+                                     <!--   <a class="btn btn-primary" style="line-height:13px" href="@Url.Action("Details", "CentroCosto", new { id= item.id } )"><i class="fa fa-eye" aria-hidden="true"></i></a> -->
+                                    @if (permisos.modifica != null && permisos.modifica == true)
+                                    {                
+                                        <a class="btn btn-default" style="line-height:13px" href="@Url.Action("Form", "CentroCosto", new { id=item.id })"><i class="fa fa-pencil"></i></a>
+                                    }      
+                                    @if (permisos.elimina != null && permisos.elimina == true)
+                                    {   
+                                        <a class="btn btn-danger" style="line-height:13px" href="@Url.Action("Eliminar", "CentroCosto", new { id=item.id })" onclick="return confirm('¿Está seguro de eliminar este registro?');"><i class="fa fa-trash-o"></i></a>
+                                    }
+                                </text>, style: "texto-centrado")
+                            }
+                        )
+                    </div>
+                    
+                }
+                else
+                {
+                    <p>No hay registros disponibles.</p>   
+                }
+                  
+            </div>
+
+        </section>
+    </div>
+</div>

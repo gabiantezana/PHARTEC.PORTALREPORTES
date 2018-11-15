@@ -1,0 +1,422 @@
+﻿@{
+    ViewBag.Title = "Ventas por Cliente";
+    var datalista = ViewBag.resultado;
+    WebGrid wg = new WebGrid(Model, rowsPerPage: 1000);
+    var esVendedor = ViewBag.esVendedor;
+    var totales = ViewBag.totales;
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("VentasCliente");
+    TempData["clicked"] = permisos.Menu_id;
+
+    if (permisos.exporta != null && permisos.exporta == true)
+    {
+        ViewBag.Exportar = Casuarinas.Helpers.Constantes.ENABLED;
+        ViewBag.ExportarAction = "frmProdExp";
+    }
+    var filtros = ViewBag.filtros;
+
+}
+<script type="text/javascript">
+    $(function () {
+
+        var desde = $("#desde").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            hasta.datepicker("option", "minDate", getDate(this));
+        }), hasta = $("#hasta").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            desde.datepicker("option", "maxDate", getDate(this));
+        });
+
+        function getDate(element) {
+            var date;
+            try {
+                date = $.datepicker.parseDate("yy-mm-dd", element.value);
+            } catch (error) {
+                date = null;
+            }
+
+            return date;
+		}
+
+		var current_date = new Date();
+		hasta.datepicker('setDate', $('#_hasta').val() != null ? $('#_hasta').val() : current_date);
+		var date = new Date();
+		var primerDia = new Date(date.getFullYear(), date.getMonth(), 1);
+
+
+		desde.datepicker('setDate', $('#_desde').val() != null ? $('#_desde').val() : primerDia);
+
+
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+
+        // para ir al Form
+        $(".hrefAbrirForm").click(function (event) {
+            event.preventDefault();
+
+
+            var url = '@Url.Action("Form", "VentasCliente", new {
+					  sucursal = "SUCURSAL" ,
+					  cardCode = "CARD_CODE",
+					  moneda = "MONEDA",
+					  desde = "DESDE",
+					  hasta = "HASTA",
+					  divisionx = "DIVISIONX",
+					  subdivisionx = "SUBDIVISIONX",
+					  lineax = "LINEAX",
+
+					  lineaxLinea = "LINEAX_LINEA",
+					  sucursalLinea = "SUCURSAL_LINEA",
+					  subdivisionxLinea = "SUBDIVISIONX_LINEA",
+					  divisionxLinea = "DIVISIONX_LINEA",
+
+				  })';
+
+
+			url = url.replace("SUCURSAL", $('#sucursal').val());
+			url = url.replace("amp;", "");
+
+            url = url.replace("MONEDA", $('#moneda').val());
+            url = url.replace("amp;", "");
+            url = url.replace("DESDE", $('#desde').val());
+            url = url.replace("amp;", "");
+            url = url.replace("HASTA", $('#hasta').val());
+            url = url.replace("amp;", "");
+            url = url.replace("DIVISIONX", $('#divisionx').val());
+            url = url.replace("amp;", "");
+            url = url.replace("SUBDIVISIONX", $('#subdivisionx').val());
+            url = url.replace("amp;", "");
+            url = url.replace("LINEAX", $('#lineax').val());
+            url = url.replace("amp;", "");
+
+
+			url = url.replace("CARD_CODE", $(this).data("id"));
+			url = url.replace("amp;", "");
+			url = url.replace("LINEAX_LINEA", $(this).data("idlin"));
+			url = url.replace("amp;", "");
+			url = url.replace("SUCURSAL_LINEA", $(this).data("idsuc"));
+			url = url.replace("amp;", "");
+			url = url.replace("SUBDIVISIONX_LINEA", $(this).data("idsub"));
+			url = url.replace("amp;", "");
+			url = url.replace("DIVISIONX_LINEA", $(this).data("iddiv"));
+			url = url.replace("amp;", "");
+			//debugger;
+
+            window.location.href = url;
+
+		});
+
+
+    });
+</script>
+
+<script>
+    $(function () {
+        //instanciarListaPrincipal();
+
+        function sortTable(f, n, table) {
+            var rows = $('#' + table + ' tbody  tr').get();
+
+            rows.sort(function (a, b) {
+
+                var A = getVal(a);
+                var B = getVal(b);
+
+                if (A < B) {
+                    return -1 * f;
+                }
+                if (A > B) {
+                    return 1 * f;
+                }
+                return 0;
+            });
+
+            function getVal(elm) {
+                var v = $(elm).children('td').eq(n).text().toUpperCase().replace(',', '').replace('%', '');
+                if ($.isNumeric(v)) {
+                    v = parseInt(v, 10);
+                }
+                return v;
+            }
+
+            $.each(rows, function (index, row) {
+                $('#' + table).children('tbody').append(row);
+            });
+        }
+        var f_sl = 1;
+        var f_nm = 1;
+
+        $("td[id^='ph1']").click(function () {
+            f_sl *= -1;
+            var n = $("#" + this.id).prevAll().length;
+            sortTable(f_sl, n, 'tbRoles');
+        });
+
+    });
+
+    function instanciarListaPrincipal() {
+        jQuery("#tbRoles").jqGrid({
+            datatype: "local",
+            height: 200,
+            colNames: ['Código Cliente', 'Nombre Cliente', 'Sucursal', 'Cantidad',
+                'Total Venta', 'Total Costo', 'Margen', 'Venta Estandarizada',
+                'OcrCode', 'OcrCode2', 'OcrCode3', ],
+            colModel: [{ name: 'CardCode', index: 'CardCode', width: 100 },
+                { name: 'CardName', index: 'CardName', width: 200, formatter: editLink, classes: 'descrip' },
+                        { name: 'Sucursal', index: 'Sucursal', width: 100 },
+                        { name: 'Quantity', index: 'Quantity', width: 100, sorttype: "float", formatter: 'number' },
+                        { name: 'TotalVenta', index: 'TotalVenta', width: 120, sorttype: "float", formatter: 'number' },
+                        { name: 'TotalCosto', index: 'TotalCosto', width: 120, sorttype: "float", formatter: 'number' },
+                        { name: 'Margen', index: 'Margen', width: 120, sorttype: 'currency', formatter: 'currency', formatoptions: { suffix: " %" } },
+                        { name: 'MargenEstandarizado', index: 'MargenEstandarizado', width: 120, sorttype: "float", formatter: 'number' },
+                        { name: 'OcrCode', index: 'OcrCode', width: 100 },
+                        { name: 'OcrCode2', index: 'OcrCode2', width: 100 },
+                        { name: 'OcrCode3', index: 'OcrCode3', width: 100 },],
+            caption: "Ventas por cliente",
+            rowNum: 900000,
+            footerrow: true,
+            rownumbers: true,
+            autowidth: true,
+            shrinkToFit: false,
+            gridComplete: function () {
+                var $grid = $('#tbRoles');
+                var totalVta = $grid.jqGrid('getCol', 'TotalVenta', false, 'sum');
+                var totalCosto = $grid.jqGrid('getCol', 'TotalCosto', false, 'sum');
+                var totalMrgen = $grid.jqGrid('getCol', 'Margen', false, 'avg');
+                var totalEst = $grid.jqGrid('getCol', 'MargenEstandarizado', false, 'sum');
+                $grid.jqGrid('footerData', 'set', {
+                    'Sucursal': 'TOTALES: ',
+                    'TotalVenta': totalVta,
+                    'TotalCosto': totalCosto,
+                    'Margen': totalMrgen,
+                    'MargenEstandarizado': totalEst
+                });
+            }
+        });
+
+        var urlContent = '@(Url.Content("~/"))';
+
+        function editLink(cellValue, options, rowdata, action) {
+            return "<a class='hrefAbrirForm' href='"+urlContent+"VentasCliente/Form?" +
+                "sucursal=" + $('#sucursal').val() + "&cardCode=" + rowdata.CardCode + "&moneda=" + $('#moneda').val() +
+                "&desde=" + $('#desde').val() + "&hasta=" + $('#hasta').val() + "&divisionx=" + $('#divisionx').val() +
+                "&subdivisionx=" + $('#subdivisionx').val() + "&lineax=" + $('#lineax').val() +
+                "&lineaxLinea=" + rowdata.OcrCode3 + "&sucursalLinea=" + rowdata.Sucursal + "&subdivisionxLinea=" + rowdata.OcrCode2 +
+                "&divisionxLinea=" + rowdata.OcrCode + "'>"+rowdata.CardName+"</a >";
+
+        }
+    }
+
+</script>
+
+@*@if (esVendedor)
+    {
+        <script>
+            $(document).ready(function () {
+                jQuery("#tbRoles").jqGrid('hideCol', ["TotalCosto", "Margen", "MargenEstandarizado", "OcrCode", "OcrCode2", "OcrCode3"]);
+            });
+        </script>
+    }
+    else
+    {
+        <script>
+            $(document).ready(function () {
+                jQuery("#tbRoles").jqGrid('hideCol', ["OcrCode", "OcrCode2", "OcrCode3"]);
+            });
+        </script>
+    }*@
+
+<link href="~/Assets/css/tableStyle.css" rel="stylesheet" type="text/css" />
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+    <li class="active"><i class="fa fa-file-text-o ibread"></i>Ventas por Cliente</li>
+</ol>
+
+
+<div class="col-md-12">
+    <section class="panel">
+        <header class="panel-heading" style="height:48px">
+            Ventas por Clientes
+        </header>
+
+        @using (@Html.BeginForm("Index", "VentasCliente", FormMethod.Get, new { @class = "form-horizontal" }))
+        {
+            <div class="form-group" style="margin:20px;margin-bottom:30px">
+                <label class="control-label col-sm-1" for="sucursal">Sucursal</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("sucursal", null, new { @class = "form-control", @title = "Seleccione..." })
+
+                </div>
+                <label class="control-label col-sm-1" for="desde">Desde:</label>
+                <div class="col-sm-2">
+                    @Html.TextBox("desde", null, new { @class = "form-control col-xs-4" })
+                </div>
+                <label class="control-label col-sm-1" for="hasta">Hasta:</label>
+                <div class="col-sm-2">
+                    @Html.TextBox("hasta", null, new { @class = "form-control col-xs-4" })
+                </div>
+                <label class="control-label col-sm-1" for="moneda">Moneda:</label>
+
+
+                <div class="col-sm-2">
+                    @Html.DropDownList("moneda", null, new { @class = "form-control", @title = "Seleccione..." })
+
+                </div>
+            </div>
+
+            <div class="form-group" style="margin:20px;margin-bottom:30px">
+                <label class="control-label col-sm-1" for="divisionx">División:</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("divisionx", null, new { @class = "form-control col-xs-4", @title = "Seleccione..." })
+                </div>
+                <label class="control-label col-sm-1" for="subdivisionx">Subdivisión:</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("subdivisionx", null, new { @class = "form-control col-xs-4" })
+                </div>
+                <label class="control-label col-sm-1" for="lineax">Línea:</label>
+                <div class="col-sm-2">
+                    @Html.DropDownList("lineax", null, new { @class = "form-control col-xs-4" })
+                </div>
+
+                <div class="col-sm-2">
+                    <button id="btnSearch" style="width:120px" type="submit" class="search btn btn-primary">Ejecutar</button>
+                </div>
+            </div>
+
+        }
+
+
+        <div class="panel-body table-responsive">
+
+            <div>
+
+                @if (filtros != null)
+                {
+                    <input type="hidden" id="_hasta" value="@filtros.Hasta" />
+                    <input type="hidden" id="_desde" value="@filtros.Desde" />
+                }
+            </div>
+
+            <div style="overflow:auto !important; margin-bottom:30px" class="table-responsive">
+                <div class="tableview tableview-has-footer">
+                    <div class="tableview-holder">
+                        <table id="tbRoles" style="width: 920px">
+                            <thead>
+                                <tr>
+                                    <td id="ph101" caption="#" class="texto-centrado"></td>
+                                    <td id="ph102" caption="Código Cliente" class="texto-centrado"></td>
+                                    <td id="ph103" caption="Nombre Cliente" class="texto-centrado"></td>
+                                    <td id="ph104" caption="Sucursal" class="texto-centrado"></td>
+                                    <td id="ph105" caption="Cantidad" class="texto-centrado"></td>
+                                    <td id="ph106" caption="Total Venta" class="texto-centrado"></td>
+                                    @if (!esVendedor)
+                                    {
+                                        <td id="ph107" caption="Total Costo" class="texto-centrado"></td>
+                                        <td id="ph108" caption="Margen" class="texto-centrado"></td>
+                                        <td id="ph109" caption="Venta estandarizada" class="texto-centrado"></td>
+                                    }
+                                </tr>
+                            </thead>
+
+                            @if (datalista != null)
+                            {
+                                <tbody>
+                                    @{int i = 1;}
+                                    @foreach (var item in datalista)
+                                    {
+                                        <tr>
+                                            <td class="id texto-centrado">@i</td>
+                                            <td class="id descrip">@item.CardCode</td>
+                                            <td class="descrip">
+                                                <a class="hrefAbrirForm" href="" data-id="@item.CardCode" data-idsuc="@item.Sucursal"
+                                                   data-iddiv="@item.OcrCode" data-idsub="@item.OcrCode2"
+                                                   data-idlin="@item.OcrCode3">@item.CardName</a>
+                                            </td>
+                                            <td class="db_name texto-centrado">@item.Sucursal</td>
+                                            <td class="db_name texto-centrado">@item.Quantity.ToString("N2") </td>
+                                            <td>@item.TotalVenta.ToString("N2") </td>
+
+                                            @if (!esVendedor)
+                                            {
+                                                <td>@item.TotalCosto.ToString("N2")</td>
+                                                <td>@item.Margen.ToString("N2")% </td>
+                                                <td>@item.MargenEstandarizado.ToString("N2") </td>
+                                            }
+                                        </tr>i++;
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td class="texto-centrado" colspan="5"><div class="fixed">Totales</div></td>
+                                        <td class="texto-centrado"><div class="fixed">@totales.TotalVentas.ToString("N2")</div></td>
+
+                                        @if (!esVendedor)
+                                        {
+                                            <td class="texto-centrado"><div class="fixed">@totales.TotalCompras.ToString("N2")</div></td>
+                                            <td class="texto-centrado"><div class="fixed">@totales.TotalMargen.ToString("N2") % </div></td>
+                                            <td class="texto-centrado"><div class="fixed">@totales.TotalMargenEstandarizado.ToString("N2")</div></td>
+                                        }
+
+                                    </tr>
+                                </tfoot>
+
+                            }
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+            @*<table id="tbRoles"></table>
+
+                @if (datalista != null)
+                 {
+                     for (int i = 0; i < datalista.Count; i++)
+                     {
+                         <script>
+                             $(document).ready(function () {
+                                 var cc = '@datalista[i].CardCode';
+                                 var cn = '@datalista[i].CardName';
+                                 var su = '@datalista[i].Sucursal';
+                                 var qu = '@datalista[i].Quantity';
+                                 var tv = '@datalista[i].TotalVenta';
+                                 var tc = '@datalista[i].TotalCosto';
+                                 var ma = '@datalista[i].Margen';
+                                 var me = '@datalista[i].MargenEstandarizado';
+                                 var oc = '@datalista[i].OcrCode';
+                                 var o2 = '@datalista[i].OcrCode2';
+                                 var o3 = '@datalista[i].OcrCode3';
+
+                                 var myData = [{
+                                     CardCode: cc, CardName: cn,
+                                     Sucursal: su, Quantity: qu,
+                                     TotalVenta: tv, TotalCosto: tc,
+                                     Margen: ma, MargenEstandarizado: me,
+                                     OcrCode: oc, OcrCode2: o2,
+                                     OcrCode3: o3
+                                 }];
+
+                                 jQuery("#tbRoles").jqGrid('addRowData', @(i + 1), myData[0]);
+                             });
+                         </script>
+                     }
+                 }*@
+        </div>
+    </section>
+
+</div>
+
+
+
+
+
+<button type="button" id="frmProdExp" style="display:none"
+        onclick="location.href='@Url.Action("Exportar", "VentasCliente")'">
+    Exportar
+</button>

@@ -1,0 +1,282 @@
+﻿@model List<Model.SolicitudListModel>
+
+@{
+    ViewBag.Aprobar = Casuarinas.Helpers.Constantes.ENABLED;
+    ViewBag.Rechazar = Casuarinas.Helpers.Constantes.ENABLED;
+
+    ViewBag.Title = "Solicitudes pendientes";
+    WebGrid wg = new WebGrid(Model, rowsPerPage: 10);
+
+    var permisos = Casuarinas.Helpers.SessionHelper.ObtenerXMenuYRol("Pendientes");
+    TempData["clicked"] = permisos.Menu_id;
+}
+
+<style>
+    .search
+    {
+        width:120px;
+    }
+
+</style>
+
+<script>
+
+    $(function() {
+        var from = $("#from").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            to.datepicker("option", "minDate", getDate(this));
+        }), to = $("#to").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'yy-mm-dd'
+        }).on("change", function () {
+            from.datepicker("option", "maxDate", getDate(this));
+        });
+
+        function getDate(element) {
+            var date;
+            try {
+                date = $.datepicker.parseDate("yy-mm-dd", element.value);
+            } catch (error) {
+                date = null;
+            }
+
+            return date;
+        }
+
+        
+        $("#user").attr("data-live-search", "true");
+        $("#user").selectpicker();
+
+
+        //Nodo de aprobacion
+        $("#btnAprobar").button().on("click", function () {
+
+            var counter = 0;
+            var ids = [];
+
+            $('#grdPend table tbody tr').each(function () {
+                if ($(this).find('.sol_sel input').val() === "1") {
+                    ids[counter] = $(this).find('.sol_id input').val();
+                    counter++;
+                }
+            });
+
+            if (counter === 0)
+                notificacion(1, "No ha seleccionado ningún documento");
+            else {
+
+                bootbox.confirm({
+                    title: "Aprobar solicitudes",
+                    message: "Se aprobará(n) " + counter+ " solicitud(es). ¿Desea continuar?",
+                    buttons: {
+                        cancel: {
+                            label: '<i class="fa fa-times"></i> Cancelar'
+                        },
+                        confirm: {
+                            label: '<i class="fa fa-check"></i> Confirmar'
+                        }
+                    },
+                    callback: function (result) {
+                        if (result) {
+
+                            var dialog = bootbox.dialog({
+                                message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Procesando...</div>',
+                                closeButton: false
+                            });
+
+                            $.ajax({
+                                type: 'POST',
+                                traditional: true,
+                                url: '@(Url.Content("~/"))' + 'pendientes/AprobarSolicitud',
+                                data: { ids: ids },
+                                success: function (r) {
+                                    
+                                    dialog.modal('hide');
+                                    if (r.respuesta) {
+                                        window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                                    } else {
+                                        notificacion(1, r.error);
+                                    }
+                                },
+                                error: function (jqXHR, textStatus, errorThrown) {
+                                    dialog.modal('hide');
+                                    notificacion(1, errorThrown);
+                                }
+                            });
+
+                            
+                        }
+                    }
+                });
+            }
+        });
+
+        //Nodo de rechazo
+        $("#btnRechazar").button().on("click", function () {
+
+            var counter = 0;
+            var ids = [];
+
+            $('#grdPend table tbody tr').each(function () {
+                if ($(this).find('.sol_sel input').val() === "1") {
+                    ids[counter] = $(this).find('.sol_id input').val();
+                    counter++;
+                }
+            });
+
+            if (counter === 0)
+                notificacion(1, "No ha seleccionado ningún documento");
+            else {
+
+                bootbox.confirm({
+                    title: "Rechazar solicitudes",
+                    message: "Se rechazará(n) " + counter + " solicitud(es). ¿Desea continuar?",
+                    buttons: {
+                        cancel: {
+                            label: '<i class="fa fa-times"></i> Cancelar'
+                        },
+                        confirm: {
+                            label: '<i class="fa fa-check"></i> Confirmar'
+                        }
+                    },
+                    callback: function (result) {
+                        if (result) {
+
+                            var dialog = bootbox.dialog({
+                                message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Procesando...</div>',
+                                closeButton: false
+                            });
+
+                            $.ajax({
+                                type: 'POST',
+                                traditional: true,
+                                url: '@(Url.Content("~/"))' + 'pendientes/RechazarSolicitud',
+                                data: { ids: ids },
+                                success: function (r) {
+
+                                    dialog.modal('hide');
+                                    if (r.respuesta) {
+                                        window.location.href = '@(Url.Content("~/"))' + r.redirect;
+                                    } else {
+                                        notificacion(1, r.error);
+                                    }
+                                },
+                                error: function (jqXHR, textStatus, errorThrown) {
+                                    dialog.modal('hide');
+                                    notificacion(1, errorThrown);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+
+        $("tfoot tr td a").addClass("btn btn-default");
+        $("thead").addClass("ui-widget-header");
+        $("thead tr th").addClass("texto-centrado");
+
+    });
+
+</script>
+
+<ol class="breadcrumb">
+    <li><a href="~/Home"><i class="fa fa-home ibread"></i>Inicio</a></li>
+  <li class="active"><i class="fa fa-file-text ibread"></i>Solicitudes pendientes</li>
+</ol>
+
+<div class="row">
+
+   <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading" style="height:48px">
+                <b>Solicitudes pendientes</b> 
+            </header>
+            
+            <div class="panel-body">
+                
+                @using (@Html.BeginForm("Index", "Pendientes", FormMethod.Get, new { @class = "form-horizontal" }))
+                {
+                    if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE_APPROVE] != null)
+                    {
+                        <script type="text/javascript">
+                            $(document).ready(function () {
+                                notificacion(0, 'Solicitud(es) aprobada(s) con éxito.');
+                            });
+                        </script>
+                    }
+                    else if (TempData[Casuarinas.Helpers.Constantes.TEMPDATA_MESSAGE_DENIED] != null)
+                    {
+                        <script type="text/javascript">
+                            $(document).ready(function () {
+                                notificacion(0, 'Solicitud(es) rechazada(s) con éxito.');
+                            });
+                        </script>
+                    }
+                    
+                    <div class="form-group" style="margin:20px; margin-bottom:30px"> 
+                        <label class="control-label col-sm-1" for="from">Desde: </label>
+                        <div class="col-sm-2">
+                            @Html.TextBox("from", null, new { @class = "form-control col-xs-4" })
+                        </div>
+
+                        <label class="control-label col-sm-1" for="to">Hasta: </label>
+                        <div class="col-sm-2">
+                            @Html.TextBox("to", null, new { @class = "form-control col-xs-4" })
+                        </div>
+
+                        <label class="control-label col-sm-1" for="to">Usuario: </label>
+                        <div class="col-sm-3">
+                            @Html.DropDownList("user", null, new { @class = "form-control", @title = "Seleccione..." })
+                        </div>
+
+                        <div class="col-sm-2">
+                            <button id="btnSearch" type="submit" class="search btn btn-primary">Buscar</button>
+                        </div>
+                    </div>
+                }
+
+                <div id="grdPend" class="table-responsive">
+                    @wg.GetHtml(
+                        tableStyle: "table table-bordered table-hover dataTable no-footer dtr-inline",
+                        nextText: "Siguiente >",
+                        previousText: "< Anterior",
+                        columns: new[]{
+                            wg.Column(null,null, format: @<input type="hidden" name="sol_id" value="@item.SolicitudId"/>, style: "sol_id"),
+                            wg.Column("SolicitudId",header:"ID", format: (item) => "MS" + item.SolicitudId.ToString("D9"), style: "texto-centrado"),
+                            wg.Column("EmpresaDes", header:"Empresa"),
+                            wg.Column("CentorCostoDes", header:"Centro de costo"),
+                            wg.Column("UsuarioNom", header:"Usuario"),
+                            wg.Column("FechaRegistro", header:"Fecha Registro", format : (item) => string.Format("{0:yyyy-MM-dd}", item.FechaRegistro), style: "texto-centrado"),
+                            wg.Column("FechaNecesaria", header: "Fecha Necesaria" , format : (item) => string.Format("{0:yyyy-MM-dd}", item.FechaNecesaria), style: "texto-centrado"),
+                            wg.Column("CantidadItems", header: "Items", style: "texto-centrado"),
+                            wg.Column(null, "Sel.", format: 
+                            @<text>
+                                    <input type="checkbox" id="input-20" data-toggle="checkbox-x" value="1" data-three-state="false">
+                            </text>, style: "texto-centrado sol_sel"),
+                            wg.Column(null, "Acción",format: 
+                            @<text>
+                                    <a class="btn btn-primary" style="line-height:13px" href="@Url.Action("Details", "Pendientes", new { id= item.SolicitudId } )"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                                    <a class="btn btn-default" style="line-height:13px" href="@Url.Action("Form", "Pendientes", new { id=item.SolicitudId })"><i class="fa fa-pencil"></i></a>
+                            </text>, style: "texto-centrado")
+                        }
+                    ) 
+                </div>
+            </div>
+
+        </section>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        <button id="btnSolAprov" type="button" class="btn btn-primary btn-lg" style="width:300px;display:none">Aprobar</button>
+        <button id="btnSolRechz" type="button" style="display:none">Rechazar</button>
+    </div>
+    <div class="col-md-4"></div>
+</div>

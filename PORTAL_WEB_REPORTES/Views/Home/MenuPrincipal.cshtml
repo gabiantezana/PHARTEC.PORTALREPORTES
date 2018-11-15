@@ -1,0 +1,70 @@
+﻿@model IEnumerable<Model.Menu>
+
+@{
+    List<Model.MenuRol> permisos = (List<Model.MenuRol>) Session[Casuarinas.Helpers.Constantes.ACCESOS]; 
+}
+
+<script type="text/javascript">
+
+    $(function () {
+        
+        $('#menu_principal li').click(function (e) {
+
+            var menuId = this.id;
+            //var active = $(this).hasClass("active");
+            //alert("Is ACtive: " + active);
+
+            var active11 = $("#11").hasClass("active");
+            var active12 = $("#12").hasClass("active");
+            var active13 = $("#13").hasClass("active");
+
+            if ((menuId == 11 || menuId == 12 || menuId == 13) && (active11 || active12 || active13)) {
+                $("#menu_principal li a").attr("target", "_blank");
+            } else {
+                $("#menu_principal li a").attr("target", "_self");
+            }
+
+            $(this).addClass('active').siblings().removeClass('active');
+        });
+
+        $(window).resize(function () {
+            var currHeight = $("#lat-sidebar").height();
+            var lastHeight = $("#menu_principal").height();
+
+            if (currHeight > 566 && lastHeight <= 566) {
+                $("#menu_principal").height(currHeight);
+            }
+
+        });
+    });
+
+</script>
+
+<style>
+    .sidebar-menu
+    {
+        height: 436px;
+        overflow-y:auto;
+    }
+</style>
+
+<ul class="sidebar-menu" id="menu_principal">
+    
+        @foreach (var m in Model)
+        {
+            foreach (var a in permisos)
+            {
+                if (m.id == a.Menu_id && a.accesa)
+                {
+                    <li class="menu_id @(TempData["clicked"] != null ? (TempData["clicked"].ToString().Equals(m.id.ToString())? "active": "") : "")" id="@m.id">
+                        <a href="@Url.Action(m.actionName, m.controllerName)"
+                            data-form-method="post">
+                            <i class="@m.iconName"></i> <span>@m.descripcion</span>
+                        </a>
+                    </li>
+                    break;
+                }
+            }
+        }
+   
+</ul>
